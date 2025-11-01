@@ -105,7 +105,7 @@ class Astra_VectorStores implements INode {
             const docs = nodeData.inputs?.document as Document[]
             const embeddings = nodeData.inputs?.embeddings as Embeddings
             const vectorDimension = nodeData.inputs?.vectorDimension as number
-            const astraNamespace = nodeData.inputs?.astraNamespace as string
+            const _astraNamespace = nodeData.inputs?.astraNamespace as string
             const astraCollection = nodeData.inputs?.astraCollection as string
             const similarityMetric = nodeData.inputs?.similarityMetric as 'cosine' | 'euclidean' | 'dot_product' | undefined
             const credentialData = await getCredentialData(nodeData.credential ?? '', options)
@@ -122,7 +122,6 @@ class Astra_VectorStores implements INode {
 
             const astraConfig: AstraLibArgs = {
                 ...clientConfig,
-                namespace: astraNamespace ?? 'default_keyspace',
                 collection: astraCollection ?? credentialData.collectionName ?? 'flowise_test',
                 collectionOptions: {
                     vector: {
@@ -153,7 +152,7 @@ class Astra_VectorStores implements INode {
         const embeddings = nodeData.inputs?.embeddings as Embeddings
         const vectorDimension = nodeData.inputs?.vectorDimension as number
         const similarityMetric = nodeData.inputs?.similarityMetric as 'cosine' | 'euclidean' | 'dot_product' | undefined
-        const astraNamespace = nodeData.inputs?.astraNamespace as string
+        const _astraNamespace = nodeData.inputs?.astraNamespace as string
         const astraCollection = nodeData.inputs?.astraCollection as string
         const credentialData = await getCredentialData(nodeData.credential ?? '', options)
 
@@ -169,7 +168,6 @@ class Astra_VectorStores implements INode {
 
         const astraConfig: AstraLibArgs = {
             ...clientConfig,
-            namespace: astraNamespace ?? 'default_keyspace',
             collection: astraCollection ?? credentialData.collectionName ?? 'flowise_test',
             collectionOptions: {
                 vector: {
