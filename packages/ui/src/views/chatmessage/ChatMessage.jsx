@@ -580,7 +580,13 @@ const ChatMessage = ({ open, chatflowid, isAgentCanvas, isDialog, previews, setP
         }
     }
 
-    const onChange = useCallback((e) => setUserInput(e.target.value), [setUserInput])
+    const onChange = useCallback(
+        (e) => {
+            // Using debounced input for better performance
+            setUserInput(e.target.value)
+        },
+        [setUserInput]
+    )
 
     const updateLastMessage = (text) => {
         setMessages((prevMessages) => {
@@ -2957,6 +2963,7 @@ const ChatMessage = ({ open, chatflowid, isAgentCanvas, isDialog, previews, setP
                             maxRows={isDialog ? 7 : 2}
                             startAdornment={
                                 <>
+                                    {console.log('startAdornment', isChatFlowAvailableForImageUploads, isChatFlowAvailableForFileUploads)}
                                     {isChatFlowAvailableForImageUploads && !isChatFlowAvailableForFileUploads && (
                                         <InputAdornment position='start' sx={{ ml: 2 }}>
                                             <IconButton

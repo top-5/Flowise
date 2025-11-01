@@ -7,6 +7,11 @@ import { useSelector } from 'react-redux'
 const FollowUpPromptsCard = ({ isGrid, followUpPrompts, sx, onPromptClick }) => {
     const customization = useSelector((state) => state.customization)
 
+    if (!Array.isArray(followUpPrompts)) {
+        console.warn('followUpPrompts should be an array')
+        return <></>
+    }
+
     return (
         <Box
             className={'button-container'}
