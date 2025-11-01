@@ -1,7 +1,7 @@
 import { flatten } from 'lodash'
 import { Document } from '@langchain/core/documents'
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams, IndexingResult } from '../../../src/Interface'
-import { FLOWISE_CHATID, getBaseClasses } from '../../../src/utils'
+import { FLOWISE_CHATID, getBaseClasses, parseJsonBody } from '../../../src/utils'
 import { index } from '../../../src/indexing'
 import { howToUseFileUpload } from '../VectorStoreUtils'
 import { VectorStore } from '@langchain/core/vectorstores'
@@ -11,6 +11,26 @@ import { TypeORMDriver } from './driver/TypeORM'
 import { getContentColumnName, getDatabase, getHost, getPort, getTableName } from './utils'
 
 const serverCredentialsExists = !!process.env.POSTGRES_VECTORSTORE_USER && !!process.env.POSTGRES_VECTORSTORE_PASSWORD
+
+// added temporarily to fix the base class return for VectorStore when postgres node is using TypeORM
+function getVectorStoreBaseClasses() {
+    // Try getting base classes through the utility function
+    const baseClasses = getBaseClasses(VectorStore)
+
+    // If we got results, return them
+    if (baseClasses && baseClasses.length > 0) {
+        return baseClasses
+    }
+
+    // If VectorStore is recognized as a class but getBaseClasses returned nothing,
+    // return the known inheritance chain
+    if (VectorStore instanceof Function) {
+        return ['VectorStore']
+    }
+
+    // Fallback to minimum required class
+    return ['VectorStore']
+}
 
 class Postgres_VectorStores implements INode {
     label: string
@@ -174,7 +194,8 @@ class Postgres_VectorStores implements INode {
                 name: 'pgMetadataFilter',
                 type: 'json',
                 additionalParams: true,
-                optional: true
+                optional: true,
+                acceptVariable: true
             },
             {
                 label: 'Content Column Name',
@@ -195,7 +216,11 @@ class Postgres_VectorStores implements INode {
             {
                 label: 'Postgres Vector Store',
                 name: 'vectorStore',
-                baseClasses: [this.type, ...getBaseClasses(VectorStore)]
+                baseClasses: [
+                    this.type,
+                    // ...getBaseClasses(VectorStore), // disabled temporarily for using TypeORM
+                    ...getVectorStoreBaseClasses() // added temporarily for using TypeORM
+                ]
             }
         ]
     }
@@ -283,7 +308,7 @@ class Postgres_VectorStores implements INode {
 
         let pgMetadataFilter: any
         if (_pgMetadataFilter) {
-            pgMetadataFilter = typeof _pgMetadataFilter === 'object' ? _pgMetadataFilter : JSON.parse(_pgMetadataFilter)
+            pgMetadataFilter = typeof _pgMetadataFilter === 'object' ? _pgMetadataFilter : parseJsonBody(_pgMetadataFilter)
         }
         if (isFileUploadEnabled && options.chatId) {
             pgMetadataFilter = {
