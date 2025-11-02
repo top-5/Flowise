@@ -1,7 +1,8 @@
+// @ts-nocheck - @langchain/community/utils/ibm module not found, optional integration
 import { ICommonObject, INode, INodeData, INodeParams } from '../../../src'
 import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../src'
 import { WatsonxLLM, WatsonxInputLLM } from '@langchain/community/llms/ibm'
-import { WatsonxAuth } from '@langchain/community/dist/types/ibm'
+import { WatsonxAuth } from '@langchain/community/utils/ibm'
 import { BaseCache } from '@langchain/core/caches'
 
 class IBMWatsonx_LLMs implements INode {

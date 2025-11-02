@@ -6,7 +6,7 @@ import { ChainValues } from '@langchain/core/utils/types'
 import { AgentStep } from '@langchain/core/agents'
 import { renderTemplate, MessagesPlaceholder, HumanMessagePromptTemplate, PromptTemplate } from '@langchain/core/prompts'
 import { RunnableSequence } from '@langchain/core/runnables'
-import { ChatConversationalAgent } from 'langchain/agents'
+import { ChatConversationalAgent } from '@langchain/classic/agents'
 import { getBaseClasses, transformBracesWithColon } from '../../../src/utils'
 import { ConsoleCallbackHandler, CustomChainHandler, additionalCallbacks } from '../../../src/handler'
 import {
@@ -264,7 +264,7 @@ const prepareAgent = async (
     }
 
     /** Bind a stop token to the model */
-    const modelWithStop = model.bind({
+    const modelWithStop = model.withConfig({
         stop: ['\nObservation']
     })
 

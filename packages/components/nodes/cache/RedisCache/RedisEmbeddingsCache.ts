@@ -1,10 +1,10 @@
 import { Redis } from 'ioredis'
 import { RedisByteStore } from '@langchain/community/storage/ioredis'
 import { Embeddings, EmbeddingsInterface } from '@langchain/core/embeddings'
-import { CacheBackedEmbeddingsFields } from 'langchain/embeddings/cache_backed'
+import { CacheBackedEmbeddingsFields } from '@langchain/classic/embeddings/cache_backed'
 import { getBaseClasses, getCredentialData, getCredentialParam, ICommonObject, INode, INodeData, INodeParams } from '../../../src'
 import { BaseStore } from '@langchain/core/stores'
-import { insecureHash } from '@langchain/core/utils/hash'
+import { sha256 } from '@langchain/core/utils/hash'
 import { Document } from '@langchain/core/documents'
 
 class RedisEmbeddingsCache implements INode {
@@ -27,7 +27,7 @@ class RedisEmbeddingsCache implements INode {
         this.description = 'Cache generated Embeddings in Redis to avoid needing to recompute them.'
         this.icon = 'redis.svg'
         this.category = 'Cache'
-        this.baseClasses = [this.type, ...getBaseClasses(CacheBackedEmbeddings)]
+        this.baseClasses = [this.type, ...getBaseClasses(CacheBackedEmbeddingsExtended)]
         this.credential = {
             label: 'Connect Credential',
             name: 'credential',
@@ -105,7 +105,7 @@ class RedisEmbeddingsCache implements INode {
             ttl: ttlNumber
         })
 
-        const store = CacheBackedEmbeddings.fromBytesStore(underlyingEmbeddings, redisStore, {
+        const store = CacheBackedEmbeddingsExtended.fromBytesStore(underlyingEmbeddings, redisStore, {
             namespace: namespace,
             redisClient: client
         })
@@ -114,7 +114,7 @@ class RedisEmbeddingsCache implements INode {
     }
 }
 
-class CacheBackedEmbeddings extends Embeddings {
+class CacheBackedEmbeddingsExtended extends Embeddings {
     protected underlyingEmbeddings: EmbeddingsInterface
 
     protected documentEmbeddingStore: BaseStore<string, number[]>
@@ -168,7 +168,7 @@ class CacheBackedEmbeddings extends Embeddings {
         const decoder = new TextDecoder()
         const encoderBackedStore = new EncoderBackedStore<string, number[], Uint8Array>({
             store: documentEmbeddingStore,
-            keyEncoder: (key) => (options?.namespace ?? '') + insecureHash(key),
+            keyEncoder: (key) => (options?.namespace ?? '') + sha256(key),
             valueSerializer: (value) => encoder.encode(JSON.stringify(value)),
             valueDeserializer: (serializedValue) => JSON.parse(decoder.decode(serializedValue))
         })

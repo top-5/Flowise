@@ -39,10 +39,10 @@ const secureCookie =
     process.env.SECURE_COOKIES === 'false'
         ? false
         : process.env.SECURE_COOKIES === 'true'
-        ? true
-        : process.env.APP_URL?.startsWith('https')
-        ? true
-        : false
+          ? true
+          : process.env.APP_URL?.startsWith('https')
+            ? true
+            : false
 const jwtOptions = {
     secretOrKey: jwtAuthTokenSecret,
     audience: jwtAudience,
@@ -393,8 +393,8 @@ export const generateJwtRefreshToken = (user: any) => {
 const _generateJwtToken = (user: Partial<LoggedInUser>, expiryInMinutes: number, secret: string) => {
     const encryptedUserInfo = encryptToken(user?.id + ':' + user?.activeWorkspaceId)
     return sign({ id: user?.id, username: user?.name, meta: encryptedUserInfo }, secret!, {
-        expiresIn: expiryInMinutes + 'm', // Expiry in minutes
-        notBefore: '0', // Cannot use before now, can be configured to be deferred.
+        expiresIn: expiryInMinutes * 60, // Expiry in seconds (converted from minutes)
+        notBefore: 0, // Cannot use before now, can be configured to be deferred.
         algorithm: 'HS256', // HMAC using SHA-256 hash algorithm
         audience: jwtAudience, // The audience of the token
         issuer: jwtIssuer // The issuer of the token

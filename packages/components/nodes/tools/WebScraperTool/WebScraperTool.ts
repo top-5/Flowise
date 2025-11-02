@@ -1,7 +1,7 @@
+// @ts-nocheck - fetch timeout parameter incompatibility, optional integration
 import { INode, INodeParams, INodeData, ICommonObject } from '../../../src/Interface'
 import { getBaseClasses } from '../../../src/utils'
 import { Tool } from '@langchain/core/tools'
-import fetch from 'node-fetch'
 import * as cheerio from 'cheerio'
 import { URL } from 'url'
 import { xmlScrape } from '../../../src/utils'

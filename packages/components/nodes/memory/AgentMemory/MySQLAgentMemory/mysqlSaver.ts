@@ -2,9 +2,15 @@ import { BaseCheckpointSaver, Checkpoint, CheckpointMetadata } from '@langchain/
 import { RunnableConfig } from '@langchain/core/runnables'
 import { BaseMessage } from '@langchain/core/messages'
 import { DataSource } from 'typeorm'
-import { CheckpointTuple, SaverOptions, SerializerProtocol } from '../interface'
+import { CheckpointTuple, SaverOptions, JsonSerializer } from '../interface'
 import { IMessage, MemoryMethods } from '../../../../src/Interface'
 import { mapChatMessageToBaseMessage } from '../../../../src/utils'
+
+// CheckpointListOptions not exported, define locally
+type CheckpointListOptions = {
+    limit?: number
+    before?: RunnableConfig
+}
 
 export class MySQLSaver extends BaseCheckpointSaver implements MemoryMethods {
     protected isSetup: boolean
@@ -12,8 +18,8 @@ export class MySQLSaver extends BaseCheckpointSaver implements MemoryMethods {
     threadId: string
     tableName = 'checkpoints'
 
-    constructor(config: SaverOptions, serde?: SerializerProtocol<Checkpoint>) {
-        super(serde)
+    constructor(config: SaverOptions) {
+        super(new JsonSerializer())
         this.config = config
         const { threadId } = config
         this.threadId = threadId
@@ -69,7 +75,8 @@ export class MySQLSaver extends BaseCheckpointSaver implements MemoryMethods {
         this.isSetup = true
     }
 
-    async getTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
+    // Deprecated, but kept for compatibility with legacy usage
+    async getTuple(config: { configurable: any }): Promise<any | undefined> {
         const dataSource = await this.getDataSource()
         await this.setup(dataSource)
 
@@ -95,8 +102,8 @@ export class MySQLSaver extends BaseCheckpointSaver implements MemoryMethods {
                             checkpoint_id: row.checkpoint_id || checkpoint_id
                         }
                     },
-                    checkpoint: (await this.serde.parse(row.checkpoint.toString())) as Checkpoint,
-                    metadata: (await this.serde.parse(row.metadata.toString())) as CheckpointMetadata,
+                    checkpoint: JSON.parse(row.checkpoint.toString()) as Checkpoint,
+                    metadata: JSON.parse(row.metadata.toString()) as CheckpointMetadata,
                     parentConfig: row.parent_id
                         ? {
                               configurable: {
@@ -116,44 +123,47 @@ export class MySQLSaver extends BaseCheckpointSaver implements MemoryMethods {
         return undefined
     }
 
-    async *list(config: RunnableConfig, limit?: number, before?: RunnableConfig): AsyncGenerator<CheckpointTuple, void, unknown> {
+    async *list(config: RunnableConfig, options?: CheckpointListOptions): AsyncGenerator<CheckpointTuple> {
         const dataSource = await this.getDataSource()
         await this.setup(dataSource)
         const queryRunner = dataSource.createQueryRunner()
-        try {
-            const threadId = config.configurable?.thread_id || this.threadId
-            const tableName = this.sanitizeTableName(this.tableName)
-            let sql = `SELECT thread_id, checkpoint_id, parent_id, checkpoint, metadata FROM ${tableName} WHERE thread_id = ? ${
-                before ? 'AND checkpoint_id < ?' : ''
-            } ORDER BY checkpoint_id DESC`
-            if (limit) {
-                sql += ` LIMIT ${limit}`
-            }
-            const args = [threadId, before?.configurable?.checkpoint_id].filter(Boolean)
+        const threadId = config.configurable?.thread_id || this.threadId
+        const tableName = this.sanitizeTableName(this.tableName)
+        let sql = `SELECT thread_id, checkpoint_id, parent_id, checkpoint, metadata FROM ${tableName} WHERE thread_id = ?`
+        const args = [threadId]
 
+        if (options?.before?.configurable?.checkpoint_id) {
+            sql += ' AND checkpoint_id < ?'
+            args.push(options.before.configurable.checkpoint_id)
+        }
+
+        sql += ' ORDER BY checkpoint_id DESC'
+        if (options?.limit) {
+            sql += ` LIMIT ${options.limit}`
+        }
+
+        try {
             const rows = await queryRunner.manager.query(sql, args)
             await queryRunner.release()
 
-            if (rows && rows.length > 0) {
-                for (const row of rows) {
-                    yield {
-                        config: {
-                            configurable: {
-                                thread_id: row.thread_id,
-                                checkpoint_id: row.checkpoint_id
-                            }
-                        },
-                        checkpoint: (await this.serde.parse(row.checkpoint.toString())) as Checkpoint,
-                        metadata: (await this.serde.parse(row.metadata.toString())) as CheckpointMetadata,
-                        parentConfig: row.parent_id
-                            ? {
-                                  configurable: {
-                                      thread_id: row.thread_id,
-                                      checkpoint_id: row.parent_id
-                                  }
+            for (const row of rows) {
+                yield {
+                    config: {
+                        configurable: {
+                            thread_id: row.thread_id,
+                            checkpoint_id: row.checkpoint_id
+                        }
+                    },
+                    checkpoint: JSON.parse(row.checkpoint.toString()) as Checkpoint,
+                    metadata: JSON.parse(row.metadata.toString()) as CheckpointMetadata,
+                    parentConfig: row.parent_id
+                        ? {
+                              configurable: {
+                                  thread_id: row.thread_id,
+                                  checkpoint_id: row.parent_id
                               }
-                            : undefined
-                    }
+                          }
+                        : undefined
                 }
             }
         } catch (error) {
@@ -168,37 +178,46 @@ export class MySQLSaver extends BaseCheckpointSaver implements MemoryMethods {
         const dataSource = await this.getDataSource()
         await this.setup(dataSource)
 
-        if (!config.configurable?.checkpoint_id) return {}
+        const thread_id = config.configurable?.thread_id || this.threadId
+        const checkpoint_id = checkpoint.id || config.configurable?.checkpoint_id
         try {
             const queryRunner = dataSource.createQueryRunner()
             const row = [
-                config.configurable?.thread_id || this.threadId,
-                checkpoint.id,
+                thread_id,
+                checkpoint_id,
                 config.configurable?.checkpoint_id,
-                Buffer.from(this.serde.stringify(checkpoint)), // Encode to binary
-                Buffer.from(this.serde.stringify(metadata)) // Encode to binary
+                Buffer.from(JSON.stringify(checkpoint)),
+                Buffer.from(JSON.stringify(metadata))
             ]
             const tableName = this.sanitizeTableName(this.tableName)
-
             const query = `INSERT INTO ${tableName} (thread_id, checkpoint_id, parent_id, checkpoint, metadata)
                            VALUES (?, ?, ?, ?, ?)
                            ON DUPLICATE KEY UPDATE checkpoint = VALUES(checkpoint), metadata = VALUES(metadata)`
-
             await queryRunner.manager.query(query, row)
             await queryRunner.release()
+            return {
+                configurable: {
+                    thread_id: thread_id,
+                    checkpoint_id: checkpoint_id
+                }
+            }
         } catch (error) {
             console.error('Error saving checkpoint', error)
             throw new Error('Error saving checkpoint')
         } finally {
             await dataSource.destroy()
         }
+    }
 
-        return {
-            configurable: {
-                thread_id: config.configurable?.thread_id || this.threadId,
-                checkpoint_id: checkpoint.id
-            }
-        }
+    async putWrites(config: { configurable: any }, writes: [string, any][], parentId: string): Promise<void> {
+        // TODO: Implement write storage for agent intermediate steps
+        // This would store pending writes linked to a checkpoint
+        console.warn('putWrites not yet implemented for MySQLSaver')
+    }
+
+    async deleteThread(threadId: string): Promise<void> {
+        // Remove all checkpoints/etc for this thread
+        await this.delete(threadId)
     }
 
     async delete(threadId: string): Promise<void> {

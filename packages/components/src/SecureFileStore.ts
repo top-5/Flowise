@@ -1,5 +1,5 @@
 import { Serializable } from '@langchain/core/load/serializable'
-import { NodeFileStore } from 'langchain/stores/file/node'
+import { NodeFileStore } from '@langchain/classic/stores/file/node'
 import { isUnsafeFilePath, isWithinWorkspace } from './validator'
 import * as path from 'path'
 import * as fs from 'fs'

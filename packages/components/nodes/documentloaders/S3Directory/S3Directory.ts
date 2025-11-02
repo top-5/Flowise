@@ -13,15 +13,16 @@ import * as fsDefault from 'node:fs'
 import * as path from 'node:path'
 import * as os from 'node:os'
 
-import { DirectoryLoader } from 'langchain/document_loaders/fs/directory'
-import { JSONLoader } from 'langchain/document_loaders/fs/json'
+import { BaseDocumentLoader } from '@langchain/core/document_loaders/base'
+import { DirectoryLoader } from '@langchain/classic/document_loaders/fs/directory'
+import { JSONLoader } from '@langchain/classic/document_loaders/fs/json'
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
-import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
-import { TextLoader } from 'langchain/document_loaders/fs/text'
-import { TextSplitter } from 'langchain/text_splitter'
+import { TextLoader } from '@langchain/classic/document_loaders/fs/text'
+import { TextSplitter } from '@langchain/textsplitters'
 import { CSVLoader } from '../Csv/CsvLoader'
 import { LoadOfSheet } from '../MicrosoftExcel/ExcelLoader'
 import { PowerpointLoader } from '../MicrosoftPowerpoint/PowerpointLoader'
+import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
 class S3_DocumentLoaders implements INode {
     label: string
     name: string
@@ -237,59 +238,59 @@ class S3_DocumentLoaders implements INode {
             const loader = new DirectoryLoader(
                 tempDir,
                 {
-                    '.json': (path) => new JSONLoader(path),
-                    '.txt': (path) => new TextLoader(path),
-                    '.csv': (path) => new CSVLoader(path),
-                    '.xls': (path) => new LoadOfSheet(path),
-                    '.xlsx': (path) => new LoadOfSheet(path),
-                    '.xlsm': (path) => new LoadOfSheet(path),
-                    '.xlsb': (path) => new LoadOfSheet(path),
-                    '.docx': (path) => new DocxLoader(path),
-                    '.ppt': (path) => new PowerpointLoader(path),
-                    '.pptx': (path) => new PowerpointLoader(path),
+                    '.json': (path) => new JSONLoader(path) as any,
+                    '.txt': (path) => new TextLoader(path) as any,
+                    '.csv': (path) => new CSVLoader(path) as any,
+                    '.xls': (path) => new LoadOfSheet(path) as any,
+                    '.xlsx': (path) => new LoadOfSheet(path) as any,
+                    '.xlsm': (path) => new LoadOfSheet(path) as any,
+                    '.xlsb': (path) => new LoadOfSheet(path) as any,
+                    '.docx': (path) => new DocxLoader(path) as any,
+                    '.ppt': (path) => new PowerpointLoader(path) as any,
+                    '.pptx': (path) => new PowerpointLoader(path) as any,
                     '.pdf': (path) =>
                         new PDFLoader(path, {
                             splitPages: pdfUsage !== 'perFile',
                             // @ts-ignore
                             pdfjs: () => import('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js')
-                        }),
-                    '.aspx': (path) => new TextLoader(path),
-                    '.asp': (path) => new TextLoader(path),
-                    '.cpp': (path) => new TextLoader(path), // C++
-                    '.c': (path) => new TextLoader(path),
-                    '.cs': (path) => new TextLoader(path),
-                    '.css': (path) => new TextLoader(path),
-                    '.go': (path) => new TextLoader(path), // Go
-                    '.h': (path) => new TextLoader(path), // C++ Header files
-                    '.kt': (path) => new TextLoader(path), // Kotlin
-                    '.java': (path) => new TextLoader(path), // Java
-                    '.js': (path) => new TextLoader(path), // JavaScript
-                    '.less': (path) => new TextLoader(path), // Less files
-                    '.ts': (path) => new TextLoader(path), // TypeScript
-                    '.php': (path) => new TextLoader(path), // PHP
-                    '.proto': (path) => new TextLoader(path), // Protocol Buffers
-                    '.python': (path) => new TextLoader(path), // Python
-                    '.py': (path) => new TextLoader(path), // Python
-                    '.rst': (path) => new TextLoader(path), // reStructuredText
-                    '.ruby': (path) => new TextLoader(path), // Ruby
-                    '.rb': (path) => new TextLoader(path), // Ruby
-                    '.rs': (path) => new TextLoader(path), // Rust
-                    '.scala': (path) => new TextLoader(path), // Scala
-                    '.sc': (path) => new TextLoader(path), // Scala
-                    '.scss': (path) => new TextLoader(path), // Sass
-                    '.sol': (path) => new TextLoader(path), // Solidity
-                    '.sql': (path) => new TextLoader(path), //SQL
-                    '.swift': (path) => new TextLoader(path), // Swift
-                    '.markdown': (path) => new TextLoader(path), // Markdown
-                    '.md': (path) => new TextLoader(path), // Markdown
-                    '.tex': (path) => new TextLoader(path), // LaTeX
-                    '.ltx': (path) => new TextLoader(path), // LaTeX
-                    '.html': (path) => new TextLoader(path), // HTML
-                    '.vb': (path) => new TextLoader(path), // Visual Basic
-                    '.xml': (path) => new TextLoader(path) // XML
+                        }) as any,
+                    '.aspx': (path) => new TextLoader(path) as any,
+                    '.asp': (path) => new TextLoader(path) as any,
+                    '.cpp': (path) => new TextLoader(path) as any, // C++
+                    '.c': (path) => new TextLoader(path) as any,
+                    '.cs': (path) => new TextLoader(path) as any,
+                    '.css': (path) => new TextLoader(path) as any,
+                    '.go': (path) => new TextLoader(path) as any, // Go
+                    '.h': (path) => new TextLoader(path) as any, // C++ Header files
+                    '.kt': (path) => new TextLoader(path) as any, // Kotlin
+                    '.java': (path) => new TextLoader(path) as any, // Java
+                    '.js': (path) => new TextLoader(path) as any, // JavaScript
+                    '.less': (path) => new TextLoader(path) as any, // Less files
+                    '.ts': (path) => new TextLoader(path) as any, // TypeScript
+                    '.php': (path) => new TextLoader(path) as any, // PHP
+                    '.proto': (path) => new TextLoader(path) as any, // Protocol Buffers
+                    '.python': (path) => new TextLoader(path) as any, // Python
+                    '.py': (path) => new TextLoader(path) as any, // Python
+                    '.rst': (path) => new TextLoader(path) as any, // reStructuredText
+                    '.ruby': (path) => new TextLoader(path) as any, // Ruby
+                    '.rb': (path) => new TextLoader(path) as any, // Ruby
+                    '.rs': (path) => new TextLoader(path) as any, // Rust
+                    '.scala': (path) => new TextLoader(path) as any, // Scala
+                    '.sc': (path) => new TextLoader(path) as any, // Scala
+                    '.scss': (path) => new TextLoader(path) as any, // Sass
+                    '.sol': (path) => new TextLoader(path) as any, // Solidity
+                    '.sql': (path) => new TextLoader(path) as any, //SQL
+                    '.swift': (path) => new TextLoader(path) as any, // Swift
+                    '.markdown': (path) => new TextLoader(path) as any, // Markdown
+                    '.md': (path) => new TextLoader(path) as any, // Markdown
+                    '.tex': (path) => new TextLoader(path) as any, // LaTeX
+                    '.ltx': (path) => new TextLoader(path) as any, // LaTeX
+                    '.html': (path) => new TextLoader(path) as any, // HTML
+                    '.vb': (path) => new TextLoader(path) as any, // Visual Basic
+                    '.xml': (path) => new TextLoader(path) as any // XML
                 },
                 true
-            )
+            ) as any as BaseDocumentLoader
 
             let docs = await handleDocumentLoaderDocuments(loader, textSplitter)
 

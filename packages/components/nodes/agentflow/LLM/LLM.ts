@@ -790,11 +790,11 @@ class LLM_Agentflow implements INode {
                         } catch (err) {
                             console.error(`Error parsing JSON schema for ${sch.key}:`, err)
                             // Fallback to generic array of records
-                            zodObj[sch.key] = z.array(z.record(z.any())).describe(sch.description || '')
+                            zodObj[sch.key] = z.array(z.record(z.string(), z.any())).describe(sch.description || '')
                         }
                     } else {
                         // If no schema provided, use generic array of records
-                        zodObj[sch.key] = z.array(z.record(z.any())).describe(sch.description || '')
+                        zodObj[sch.key] = z.array(z.record(z.string(), z.any())).describe(sch.description || '')
                     }
                 }
             }
@@ -952,7 +952,7 @@ class LLM_Agentflow implements INode {
                                 schemaObj[key] = nestedSchema.describe(description)
                             } else {
                                 // Default to record of any if properties not specified
-                                schemaObj[key] = z.record(z.any()).describe(description)
+                                schemaObj[key] = z.record(z.string(), z.any()).describe(description)
                             }
                         } else {
                             // Default to any for unknown types

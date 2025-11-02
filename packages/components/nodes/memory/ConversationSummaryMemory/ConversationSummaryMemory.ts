@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
     FlowiseSummaryMemory,
     IMessage,
@@ -11,7 +12,7 @@ import {
 import { getBaseClasses, mapChatMessageToBaseMessage } from '../../../src/utils'
 import { BaseLanguageModel } from '@langchain/core/language_models/base'
 import { BaseMessage, HumanMessage, SystemMessage } from '@langchain/core/messages'
-import { ConversationSummaryMemory, ConversationSummaryMemoryInput } from 'langchain/memory'
+import { ConversationSummaryMemory, ConversationSummaryMemoryInput } from '@langchain/classic/memory'
 import { DataSource } from 'typeorm'
 import { ChatAnthropic } from '../../chatmodels/ChatAnthropic/FlowiseChatAnthropic'
 

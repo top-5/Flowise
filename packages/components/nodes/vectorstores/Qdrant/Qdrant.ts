@@ -1,6 +1,7 @@
 import { flatten } from 'lodash'
-import { v4 as uuid } from 'uuid'
-import { QdrantClient } from '@qdrant/js-client-rest'
+import * as crypto from 'crypto'
+// QdrantClient is ESM-only, will be dynamically imported
+import type { QdrantClient } from '@qdrant/js-client-rest' with { 'resolution-mode': 'import' }
 import { VectorStoreRetrieverInput } from '@langchain/core/vectorstores'
 import { Document } from '@langchain/core/documents'
 import { QdrantVectorStore, QdrantLibArgs } from '@langchain/qdrant'
@@ -9,6 +10,9 @@ import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams, Indexi
 import { FLOWISE_CHATID, getBaseClasses, getCredentialData, getCredentialParam, parseJsonBody } from '../../../src/utils'
 import { index } from '../../../src/indexing'
 import { howToUseFileUpload } from '../VectorStoreUtils'
+
+// Generate UUID v4 using crypto (ESM import workaround)
+const uuid = crypto.randomUUID
 
 type RetrieverConfig = Partial<VectorStoreRetrieverInput<QdrantVectorStore>>
 type QdrantAddDocumentOptions = {
@@ -210,6 +214,7 @@ class Qdrant_VectorStores implements INode {
 
             const port = Qdrant_VectorStores.determinePortByUrl(qdrantServerUrl)
 
+            const { QdrantClient } = await import('@qdrant/js-client-rest')
             const client = new QdrantClient({
                 url: qdrantServerUrl,
                 apiKey: qdrantApiKey,
@@ -346,6 +351,7 @@ class Qdrant_VectorStores implements INode {
 
             const port = Qdrant_VectorStores.determinePortByUrl(qdrantServerUrl)
 
+            const { QdrantClient } = await import('@qdrant/js-client-rest')
             const client = new QdrantClient({
                 url: qdrantServerUrl,
                 apiKey: qdrantApiKey,
@@ -419,6 +425,7 @@ class Qdrant_VectorStores implements INode {
 
         const port = Qdrant_VectorStores.determinePortByUrl(qdrantServerUrl)
 
+        const { QdrantClient } = await import('@qdrant/js-client-rest')
         const client = new QdrantClient({
             url: qdrantServerUrl,
             apiKey: qdrantApiKey,

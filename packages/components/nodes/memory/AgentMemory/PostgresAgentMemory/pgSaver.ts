@@ -2,9 +2,15 @@ import { BaseCheckpointSaver, Checkpoint, CheckpointMetadata } from '@langchain/
 import { RunnableConfig } from '@langchain/core/runnables'
 import { BaseMessage } from '@langchain/core/messages'
 import { DataSource } from 'typeorm'
-import { CheckpointTuple, SaverOptions, SerializerProtocol } from '../interface'
+import { CheckpointTuple, SaverOptions, JsonSerializer } from '../interface'
 import { IMessage, MemoryMethods } from '../../../../src/Interface'
 import { mapChatMessageToBaseMessage } from '../../../../src/utils'
+
+// CheckpointListOptions not exported, define locally
+type CheckpointListOptions = {
+    limit?: number
+    before?: RunnableConfig
+}
 
 export class PostgresSaver extends BaseCheckpointSaver implements MemoryMethods {
     protected isSetup: boolean
@@ -12,8 +18,8 @@ export class PostgresSaver extends BaseCheckpointSaver implements MemoryMethods 
     threadId: string
     tableName = 'checkpoints'
 
-    constructor(config: SaverOptions, serde?: SerializerProtocol<Checkpoint>) {
-        super(serde)
+    constructor(config: SaverOptions) {
+        super(new JsonSerializer())
         this.config = config
         const { threadId } = config
         this.threadId = threadId
@@ -90,8 +96,8 @@ CREATE TABLE IF NOT EXISTS ${tableName} (
                 if (rows && rows.length > 0) {
                     return {
                         config,
-                        checkpoint: (await this.serde.parse(rows[0].checkpoint.toString())) as Checkpoint,
-                        metadata: (await this.serde.parse(rows[0].metadata.toString())) as CheckpointMetadata,
+                        checkpoint: JSON.parse(rows[0].checkpoint.toString()) as Checkpoint,
+                        metadata: JSON.parse(rows[0].metadata.toString()) as CheckpointMetadata,
                         parentConfig: rows[0].parent_id
                             ? {
                                   configurable: {
@@ -125,8 +131,8 @@ CREATE TABLE IF NOT EXISTS ${tableName} (
                                 checkpoint_id: rows[0].checkpoint_id
                             }
                         },
-                        checkpoint: (await this.serde.parse(rows[0].checkpoint)) as Checkpoint,
-                        metadata: (await this.serde.parse(rows[0].metadata)) as CheckpointMetadata,
+                        checkpoint: JSON.parse(rows[0].checkpoint) as Checkpoint,
+                        metadata: JSON.parse(rows[0].metadata) as CheckpointMetadata,
                         parentConfig: rows[0].parent_id
                             ? {
                                   configurable: {
@@ -147,7 +153,7 @@ CREATE TABLE IF NOT EXISTS ${tableName} (
         return undefined
     }
 
-    async *list(config: RunnableConfig, limit?: number, before?: RunnableConfig): AsyncGenerator<CheckpointTuple> {
+    async *list(config: RunnableConfig, options?: CheckpointListOptions): AsyncGenerator<CheckpointTuple> {
         const dataSource = await this.getDataSource()
         await this.setup(dataSource)
 
@@ -157,14 +163,14 @@ CREATE TABLE IF NOT EXISTS ${tableName} (
         let sql = `SELECT thread_id, checkpoint_id, parent_id, checkpoint, metadata FROM ${tableName} WHERE thread_id = $1`
         const args = [thread_id]
 
-        if (before?.configurable?.checkpoint_id) {
+        if (options?.before?.configurable?.checkpoint_id) {
             sql += ' AND checkpoint_id < $2'
-            args.push(before.configurable.checkpoint_id)
+            args.push(options.before.configurable.checkpoint_id)
         }
 
         sql += ' ORDER BY checkpoint_id DESC'
-        if (limit) {
-            sql += ` LIMIT ${limit}`
+        if (options?.limit) {
+            sql += ` LIMIT ${options.limit}`
         }
 
         try {
@@ -180,8 +186,8 @@ CREATE TABLE IF NOT EXISTS ${tableName} (
                                 checkpoint_id: row.checkpoint_id
                             }
                         },
-                        checkpoint: (await this.serde.parse(rows[0].checkpoint.toString())) as Checkpoint,
-                        metadata: (await this.serde.parse(rows[0].metadata.toString())) as CheckpointMetadata,
+                        checkpoint: JSON.parse(row.checkpoint.toString()) as Checkpoint,
+                        metadata: JSON.parse(row.metadata.toString()) as CheckpointMetadata,
                         parentConfig: row.parent_id
                             ? {
                                   configurable: {
@@ -212,8 +218,8 @@ CREATE TABLE IF NOT EXISTS ${tableName} (
                 config.configurable?.thread_id || this.threadId,
                 checkpoint.id,
                 config.configurable?.checkpoint_id,
-                Buffer.from(this.serde.stringify(checkpoint)), // Encode to binary
-                Buffer.from(this.serde.stringify(metadata)) // Encode to binary
+                Buffer.from(JSON.stringify(checkpoint)), // Encode to binary
+                Buffer.from(JSON.stringify(metadata)) // Encode to binary
             ]
             const tableName = this.sanitizeTableName(this.tableName)
 
@@ -259,6 +265,18 @@ CREATE TABLE IF NOT EXISTS ${tableName} (
         } finally {
             await dataSource.destroy()
         }
+    }
+
+    // New methods required by BaseCheckpointSaver v1.0
+    async putWrites(config: RunnableConfig, writes: any[], taskId: string): Promise<void> {
+        // TODO: Implement write storage for agent intermediate steps
+        // This would store pending writes linked to a checkpoint
+        console.warn('putWrites not yet implemented for PostgresSaver')
+    }
+
+    async deleteThread(threadId: string): Promise<void> {
+        // Delegate to existing delete method
+        await this.delete(threadId)
     }
 
     async getChatMessages(

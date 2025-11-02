@@ -25,7 +25,7 @@ import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
 import { CSVLoader } from '@langchain/community/document_loaders/fs/csv'
 import { LoadOfSheet } from '../MicrosoftExcel/ExcelLoader'
 import { PowerpointLoader } from '../MicrosoftPowerpoint/PowerpointLoader'
-import { TextSplitter } from 'langchain/text_splitter'
+import { TextSplitter } from '@langchain/textsplitters'
 import { IDocument } from '../../../src/Interface'
 import { omit } from 'lodash'
 import { handleEscapeCharacters } from '../../../src'
@@ -948,13 +948,13 @@ class S3_DocumentLoaders implements INode {
                 }
                 case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 case 'application/vnd.ms-excel': {
-                    const excelLoader = new LoadOfSheet(tempFilePath)
+                    const excelLoader = new LoadOfSheet(tempFilePath) as any
                     docs = await excelLoader.load()
                     break
                 }
                 case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
                 case 'application/vnd.ms-powerpoint': {
-                    const pptxLoader = new PowerpointLoader(tempFilePath)
+                    const pptxLoader = new PowerpointLoader(tempFilePath) as any
                     docs = await pptxLoader.load()
                     break
                 }

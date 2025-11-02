@@ -10,8 +10,8 @@ import { checkInputs, Moderation, streamResponse } from '../../moderation/Modera
 import { formatResponse } from '../../outputparsers/OutputParserHelpers'
 import { StringOutputParser } from '@langchain/core/output_parsers'
 import type { Document } from '@langchain/core/documents'
-import { BufferMemoryInput } from 'langchain/memory'
-import { ConversationalRetrievalQAChain } from 'langchain/chains'
+import { BufferMemoryInput } from '@langchain/classic/memory'
+import { ConversationalRetrievalQAChain } from '@langchain/classic/chains'
 import { getBaseClasses, mapChatMessageToBaseMessage } from '../../../src/utils'
 import { ConsoleCallbackHandler, additionalCallbacks } from '../../../src/handler'
 import {
@@ -419,7 +419,7 @@ class BufferMemory extends FlowiseMemory implements MemoryMethods {
     orgId: string
 
     constructor(fields: BufferMemoryInput & BufferMemoryExtendedInput) {
-        super(fields)
+        super()
         this.appDataSource = fields.appDataSource
         this.databaseEntities = fields.databaseEntities
         this.chatflowid = fields.chatflowid

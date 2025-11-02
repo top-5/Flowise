@@ -1,9 +1,9 @@
 import { omit } from 'lodash'
 import { ICommonObject, IDocument, INode, INodeData, INodeParams } from '../../../src/Interface'
-import { TextSplitter } from 'langchain/text_splitter'
+import { TextSplitter } from '@langchain/textsplitters'
 import jsonpointer from 'jsonpointer'
 import { getFileFromStorage, handleEscapeCharacters, INodeOutputsValue } from '../../../src'
-import { BaseDocumentLoader } from 'langchain/document_loaders/base'
+import { BaseDocumentLoader } from '@langchain/core/document_loaders/base'
 import { Document } from '@langchain/core/documents'
 import type { readFile as ReadFileT } from 'node:fs/promises'
 
@@ -141,7 +141,7 @@ class Jsonlines_DocumentLoaders implements INode {
             for (const file of files) {
                 if (!file) continue
                 const fileData = await getFileFromStorage(file, orgId, chatflowid)
-                const blob = new Blob([fileData])
+                const blob = new Blob([fileData as any])
                 const loader = new JSONLinesLoader(blob, pointer, metadata)
 
                 if (textSplitter) {
@@ -296,7 +296,11 @@ class JSONLinesLoader extends TextLoader {
     metadata?: ICommonObject
     additionalMetadata: ICommonObject[] = []
 
-    constructor(filePathOrBlob: string | Blob, public pointer: string, metadata?: any) {
+    constructor(
+        filePathOrBlob: string | Blob,
+        public pointer: string,
+        metadata?: any
+    ) {
         super(filePathOrBlob)
         if (metadata) {
             this.metadata = typeof metadata === 'object' ? metadata : JSON.parse(metadata)

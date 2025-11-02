@@ -1,14 +1,5 @@
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams, IServerSideEventStreamer } from '../../../src/Interface'
-import {
-    RetrieverQueryEngine,
-    ResponseSynthesizer,
-    CompactAndRefine,
-    TreeSummarize,
-    Refine,
-    SimpleResponseBuilder,
-    Metadata,
-    NodeWithScore
-} from 'llamaindex'
+import { RetrieverQueryEngine, CompactAndRefine, TreeSummarize, Refine, Metadata, NodeWithScore } from 'llamaindex'
 import { reformatSourceDocuments } from '../EngineUtils'
 import { EvaluationRunTracerLlama } from '../../../evaluation/EvaluationRunTracerLlama'
 
@@ -42,14 +33,7 @@ class QueryEngine_LlamaIndex implements INode {
                 name: 'vectorStoreRetriever',
                 type: 'VectorIndexRetriever'
             },
-            {
-                label: 'Response Synthesizer',
-                name: 'responseSynthesizer',
-                type: 'ResponseSynthesizer',
-                description:
-                    'ResponseSynthesizer is responsible for sending the query, nodes, and prompt templates to the LLM to generate a response. See <a target="_blank" href="https://ts.llamaindex.ai/modules/response_synthesizer">more</a>',
-                optional: true
-            },
+            // ResponseSynthesizer removed per new LlamaIndex API. Use built-in engine postprocessing.
             {
                 label: 'Return Source Documents',
                 name: 'returnSourceDocuments',
@@ -114,47 +98,8 @@ class QueryEngine_LlamaIndex implements INode {
 
 const prepareEngine = (nodeData: INodeData) => {
     const vectorStoreRetriever = nodeData.inputs?.vectorStoreRetriever
-    const responseSynthesizerObj = nodeData.inputs?.responseSynthesizer
-
-    let queryEngine = new RetrieverQueryEngine(vectorStoreRetriever)
-
-    if (responseSynthesizerObj) {
-        if (responseSynthesizerObj.type === 'TreeSummarize') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new TreeSummarize(vectorStoreRetriever.serviceContext, responseSynthesizerObj.textQAPromptTemplate),
-                serviceContext: vectorStoreRetriever.serviceContext
-            })
-            queryEngine = new RetrieverQueryEngine(vectorStoreRetriever, responseSynthesizer)
-        } else if (responseSynthesizerObj.type === 'CompactAndRefine') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new CompactAndRefine(
-                    vectorStoreRetriever.serviceContext,
-                    responseSynthesizerObj.textQAPromptTemplate,
-                    responseSynthesizerObj.refinePromptTemplate
-                ),
-                serviceContext: vectorStoreRetriever.serviceContext
-            })
-            queryEngine = new RetrieverQueryEngine(vectorStoreRetriever, responseSynthesizer)
-        } else if (responseSynthesizerObj.type === 'Refine') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new Refine(
-                    vectorStoreRetriever.serviceContext,
-                    responseSynthesizerObj.textQAPromptTemplate,
-                    responseSynthesizerObj.refinePromptTemplate
-                ),
-                serviceContext: vectorStoreRetriever.serviceContext
-            })
-            queryEngine = new RetrieverQueryEngine(vectorStoreRetriever, responseSynthesizer)
-        } else if (responseSynthesizerObj.type === 'SimpleResponseBuilder') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new SimpleResponseBuilder(vectorStoreRetriever.serviceContext),
-                serviceContext: vectorStoreRetriever.serviceContext
-            })
-            queryEngine = new RetrieverQueryEngine(vectorStoreRetriever, responseSynthesizer)
-        }
-    }
-
-    return queryEngine
+    // LlamaIndex v2025+: All response synthesis is internal. No manual ResponseSynthesizer/Builder.
+    return new RetrieverQueryEngine(vectorStoreRetriever)
 }
 
 module.exports = { nodeClass: QueryEngine_LlamaIndex }

@@ -1,12 +1,12 @@
 import { omit } from 'lodash'
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
-import { TextSplitter } from 'langchain/text_splitter'
-import { TextLoader } from 'langchain/document_loaders/fs/text'
-import { JSONLinesLoader, JSONLoader } from 'langchain/document_loaders/fs/json'
+import { TextSplitter } from '@langchain/textsplitters'
+import { TextLoader } from '@langchain/classic/document_loaders/fs/text'
+import { JSONLinesLoader, JSONLoader } from '@langchain/classic/document_loaders/fs/json'
 import { CSVLoader } from '@langchain/community/document_loaders/fs/csv'
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
 import { DocxLoader } from '@langchain/community/document_loaders/fs/docx'
-import { BaseDocumentLoader } from 'langchain/document_loaders/base'
+import { BaseDocumentLoader } from '@langchain/core/document_loaders/base'
 import { LoadOfSheet } from '../MicrosoftExcel/ExcelLoader'
 import { PowerpointLoader } from '../MicrosoftPowerpoint/PowerpointLoader'
 import { Document } from '@langchain/core/documents'
@@ -156,14 +156,14 @@ class File_DocumentLoaders implements INode {
                 for (const file of files) {
                     if (!file) continue
                     const fileData = await getFileFromStorage(file, orgId, chatflowid, options.chatId)
-                    const blob = new Blob([fileData])
+                    const blob = new Blob([fileData as any])
                     fileBlobs.push({ blob, ext: file.split('.').pop() || '' })
                 }
             } else {
                 for (const file of files) {
                     if (!file) continue
                     const fileData = await getFileFromStorage(file, orgId, chatflowid)
-                    const blob = new Blob([fileData])
+                    const blob = new Blob([fileData as any])
                     fileBlobs.push({ blob, ext: file.split('.').pop() || '' })
                 }
             }
@@ -212,25 +212,25 @@ class File_DocumentLoaders implements INode {
         }
 
         const loader = new MultiFileLoader(fileBlobs, {
-            json: (blob) => new JSONLoader(blob),
-            jsonl: (blob) => new JSONLinesLoader(blob, '/' + pointerName.trim()),
-            txt: (blob) => new TextLoader(blob),
-            html: (blob) => new TextLoader(blob),
-            css: (blob) => new TextLoader(blob),
-            js: (blob) => new TextLoader(blob),
-            xml: (blob) => new TextLoader(blob),
-            md: (blob) => new TextLoader(blob),
-            csv: (blob) => new CSVLoader(blob),
-            xls: (blob) => new LoadOfSheet(blob),
-            xlsx: (blob) => new LoadOfSheet(blob),
-            xlsm: (blob) => new LoadOfSheet(blob),
-            xlsb: (blob) => new LoadOfSheet(blob),
-            docx: (blob) => new DocxLoader(blob),
-            doc: (blob) => new DocxLoader(blob),
-            ppt: (blob) => new PowerpointLoader(blob),
-            pptx: (blob) => new PowerpointLoader(blob),
+            json: (blob) => new JSONLoader(blob) as any as BaseDocumentLoader,
+            jsonl: (blob) => new JSONLinesLoader(blob, '/' + pointerName.trim()) as any as BaseDocumentLoader,
+            txt: (blob) => new TextLoader(blob) as any as BaseDocumentLoader,
+            html: (blob) => new TextLoader(blob) as any as BaseDocumentLoader,
+            css: (blob) => new TextLoader(blob) as any as BaseDocumentLoader,
+            js: (blob) => new TextLoader(blob) as any as BaseDocumentLoader,
+            xml: (blob) => new TextLoader(blob) as any as BaseDocumentLoader,
+            md: (blob) => new TextLoader(blob) as any as BaseDocumentLoader,
+            csv: (blob) => new CSVLoader(blob) as any as BaseDocumentLoader,
+            xls: (blob) => new LoadOfSheet(blob) as any as BaseDocumentLoader,
+            xlsx: (blob) => new LoadOfSheet(blob) as any as BaseDocumentLoader,
+            xlsm: (blob) => new LoadOfSheet(blob) as any as BaseDocumentLoader,
+            xlsb: (blob) => new LoadOfSheet(blob) as any as BaseDocumentLoader,
+            docx: (blob) => new DocxLoader(blob) as any as BaseDocumentLoader,
+            doc: (blob) => new DocxLoader(blob) as any as BaseDocumentLoader,
+            ppt: (blob) => new PowerpointLoader(blob) as any as BaseDocumentLoader,
+            pptx: (blob) => new PowerpointLoader(blob) as any as BaseDocumentLoader,
             pdf: (blob) =>
-                pdfUsage === 'perFile'
+                (pdfUsage === 'perFile'
                     ? // @ts-ignore
                       new PDFLoader(blob, {
                           splitPages: false,
@@ -243,8 +243,8 @@ class File_DocumentLoaders implements INode {
                           pdfjs: () =>
                               // @ts-ignore
                               legacyBuild ? import('pdfjs-dist/legacy/build/pdf.js') : import('pdf-parse/lib/pdf.js/v1.10.100/build/pdf.js')
-                      }),
-            '': (blob) => new TextLoader(blob)
+                      })) as any as BaseDocumentLoader,
+            '': (blob) => new TextLoader(blob) as any as BaseDocumentLoader
         })
         let docs = []
 
@@ -360,7 +360,10 @@ interface LoadersMapping {
 }
 
 class MultiFileLoader extends BaseDocumentLoader {
-    constructor(public fileBlobs: { blob: Blob; ext: string }[], public loaders: LoadersMapping) {
+    constructor(
+        public fileBlobs: { blob: Blob; ext: string }[],
+        public loaders: LoadersMapping
+    ) {
         super()
 
         if (Object.keys(loaders).length === 0) {

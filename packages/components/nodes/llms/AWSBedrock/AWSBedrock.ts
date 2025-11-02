@@ -3,7 +3,6 @@ import { BaseCache } from '@langchain/core/caches'
 import { BaseLLMParams } from '@langchain/core/language_models/llms'
 import { ICommonObject, INode, INodeData, INodeOptionsValue, INodeParams } from '../../../src/Interface'
 import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../src/utils'
-import { BaseBedrockInput } from '@langchain/community/dist/utils/bedrock'
 import { getModels, getRegions, MODEL_TYPE } from '../../../src/modelLoader'
 
 /**
@@ -104,7 +103,7 @@ class AWSBedrock_LLMs implements INode {
         const iTemperature = nodeData.inputs?.temperature as string
         const iMax_tokens_to_sample = nodeData.inputs?.max_tokens_to_sample as string
         const cache = nodeData.inputs?.cache as BaseCache
-        const obj: Partial<BaseBedrockInput> & BaseLLMParams = {
+        const obj: Record<string, any> & BaseLLMParams = {
             model: customModel ? customModel : iModel,
             region: iRegion,
             temperature: parseFloat(iTemperature),

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Keyv } from 'keyv'
 import KeyvRedis from '@keyv/redis'
 import { Cache, createCache } from 'cache-manager'

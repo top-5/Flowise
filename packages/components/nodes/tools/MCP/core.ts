@@ -159,17 +159,20 @@ export async function MCPTool({
 function createSchemaModel(
     inputSchema: {
         type: 'object'
-        properties?: import('zod').objectOutputType<{}, import('zod').ZodTypeAny, 'passthrough'> | undefined
+        properties?: Record<string, any> | undefined
     } & { [k: string]: unknown }
 ): any {
     if (inputSchema.type !== 'object' || !inputSchema.properties) {
         throw new Error('Invalid schema type or missing properties')
     }
 
-    const schemaProperties = Object.entries(inputSchema.properties).reduce((acc, [key, _]) => {
-        acc[key] = z.any()
-        return acc
-    }, {} as Record<string, import('zod').ZodTypeAny>)
+    const schemaProperties = Object.entries(inputSchema.properties).reduce(
+        (acc, [key, _]) => {
+            acc[key] = z.any()
+            return acc
+        },
+        {} as Record<string, import('zod').ZodTypeAny>
+    )
 
     return z.object(schemaProperties)
 }

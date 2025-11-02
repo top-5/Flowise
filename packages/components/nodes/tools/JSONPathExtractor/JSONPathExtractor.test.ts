@@ -1,9 +1,9 @@
-const { nodeClass: JSONPathExtractor_Tools } = require('./JSONPathExtractor')
+import { vi, describe, beforeEach, it, expect, test } from 'vitest'
 import { INodeData } from '../../../src/Interface'
 
 // Mock the getBaseClasses function
-jest.mock('../../../src/utils', () => ({
-    getBaseClasses: jest.fn(() => ['Tool', 'StructuredTool'])
+vi.mock('../../../src/utils', () => ({
+    getBaseClasses: vi.fn(() => ['Tool', 'StructuredTool'])
 }))
 
 // Helper function to create a valid INodeData object
@@ -23,8 +23,12 @@ function createNodeData(id: string, inputs: any): INodeData {
 
 describe('JSONPathExtractor', () => {
     let nodeClass: any
+    let JSONPathExtractor_Tools: any
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        // Use dynamic import instead of require
+        const module = await import('./JSONPathExtractor')
+        JSONPathExtractor_Tools = (module as any).nodeClass
         nodeClass = new JSONPathExtractor_Tools()
     })
 

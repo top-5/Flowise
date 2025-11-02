@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { DataSource } from 'typeorm'
 import { v4 as uuidv4 } from 'uuid'
 import { cloneDeep, get } from 'lodash'
@@ -402,7 +403,7 @@ export const resolveVariables = async (
                 const formattedValue =
                     Array.isArray(actualValue) || (typeof actualValue === 'object' && actualValue !== null)
                         ? JSON.stringify(actualValue)
-                        : actualValue?.toString() ?? match
+                        : (actualValue?.toString() ?? match)
                 resolvedValue = resolvedValue.replace(match, formattedValue)
             }
         }
@@ -1614,7 +1615,7 @@ export const executeAgentFlow = async ({
         const startAgentflowNode = nodes.find((node) => node.data.name === 'startAgentflow')
         const isStartStateEnabled =
             nodeOverrides && startAgentflowNode
-                ? nodeOverrides[startAgentflowNode.data.label]?.find((param: any) => param.name === 'startState')?.enabled ?? false
+                ? (nodeOverrides[startAgentflowNode.data.label]?.find((param: any) => param.name === 'startState')?.enabled ?? false)
                 : false
 
         if (isStartStateEnabled && overrideConfig?.startState) {

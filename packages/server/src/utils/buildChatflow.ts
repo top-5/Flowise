@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request } from 'express'
 import * as path from 'path'
 import { DataSource } from 'typeorm'

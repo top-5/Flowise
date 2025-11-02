@@ -1,6 +1,6 @@
 import { BaseRetriever } from '@langchain/core/retrievers'
 import { VectorStoreRetriever } from '@langchain/core/vectorstores'
-import { ContextualCompressionRetriever } from 'langchain/retrievers/contextual_compression'
+import { ContextualCompressionRetriever } from '@langchain/classic/retrievers/contextual_compression'
 import { VoyageAIRerank } from './VoyageAIRerank'
 import { getCredentialData, getCredentialParam, handleEscapeCharacters } from '../../../src'
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
@@ -111,7 +111,7 @@ class VoyageAIRerankRetriever_Retrievers implements INode {
         const credentialData = await getCredentialData(nodeData.credential ?? '', options)
         const voyageAiApiKey = getCredentialParam('apiKey', credentialData, nodeData)
         const topK = nodeData.inputs?.topK as string
-        const k = topK ? parseFloat(topK) : (baseRetriever as VectorStoreRetriever).k ?? 4
+        const k = topK ? parseFloat(topK) : ((baseRetriever as VectorStoreRetriever).k ?? 4)
         const output = nodeData.outputs?.output as string
 
         const voyageAICompressor = new VoyageAIRerank(voyageAiApiKey, model, k)

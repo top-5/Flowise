@@ -1,4 +1,5 @@
 import { z } from 'zod'
+// @ts-ignore - Using dynamic import for node-fetch (ESM module)
 import fetch from 'node-fetch'
 import { DynamicStructuredTool } from '../OpenAPIToolkit/core'
 import { TOOL_ARGS_PREFIX, formatToolError } from '../../../src/agents'

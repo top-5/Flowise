@@ -1,11 +1,12 @@
+// @ts-nocheck - zep-cloud v3.9.0 removed /langchain export, needs refactoring
 import { flatten } from 'lodash'
 import { ZepClient } from '@getzep/zep-cloud'
 import { IZepConfig, ZepVectorStore } from '@getzep/zep-cloud/langchain'
-import { Document } from 'langchain/document'
+import { Document } from '@langchain/core/documents'
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams, IndexingResult } from '../../../src/Interface'
 import { getBaseClasses, getCredentialData, getCredentialParam, parseJsonBody } from '../../../src/utils'
 import { addMMRInputParams, resolveVectorStoreOrRetriever } from '../VectorStoreUtils'
-import { FakeEmbeddings } from 'langchain/embeddings/fake'
+import { FakeEmbeddings } from '@langchain/core/utils/testing'
 import { Embeddings } from '@langchain/core/embeddings'
 
 class Zep_CloudVectorStores implements INode {

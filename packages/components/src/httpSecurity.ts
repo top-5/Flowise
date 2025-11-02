@@ -1,7 +1,22 @@
 import * as ipaddr from 'ipaddr.js'
 import dns from 'dns/promises'
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
-import fetch, { RequestInit, Response } from 'node-fetch'
+
+// Use global fetch (available in Node.js 18+) or fall back to dynamic import
+let fetchImpl: typeof fetch
+async function getFetch(): Promise<typeof fetch> {
+    if (!fetchImpl) {
+        // Try to use global fetch first (Node.js 18+)
+        if (typeof globalThis.fetch !== 'undefined') {
+            fetchImpl = globalThis.fetch
+        } else {
+            // Fall back to node-fetch for older environments
+            const nodeFetch = await import('node-fetch')
+            fetchImpl = nodeFetch.default as any
+        }
+    }
+    return fetchImpl
+}
 
 /**
  * Checks if an IP address is in the deny list
@@ -167,6 +182,7 @@ export async function secureAxiosRequest(config: AxiosRequestConfig, maxRedirect
  * @throws Error if any URL in the redirect chain is denied
  */
 export async function secureFetch(url: string, init?: RequestInit, maxRedirects: number = 5): Promise<Response> {
+    const fetchFn = await getFetch()
     let currentUrl = url
     let redirectCount = 0
     let currentInit = { ...init, redirect: 'manual' as const } // Disable automatic redirects
@@ -175,7 +191,7 @@ export async function secureFetch(url: string, init?: RequestInit, maxRedirects:
     await checkDenyList(currentUrl)
 
     while (redirectCount <= maxRedirects) {
-        const response = await fetch(currentUrl, currentInit)
+        const response = await fetchFn(currentUrl, currentInit)
 
         // If it's a successful response (not a redirect), return it
         if (response.status < 300 || response.status >= 400) {

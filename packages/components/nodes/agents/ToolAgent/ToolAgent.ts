@@ -5,8 +5,6 @@ import { ChainValues } from '@langchain/core/utils/types'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate, PromptTemplate } from '@langchain/core/prompts'
-import { formatToOpenAIToolMessages } from 'langchain/agents/format_scratchpad/openai_tools'
-import { type ToolsAgentStep } from 'langchain/agents/openai/output_parser'
 import {
     extractOutputFromArray,
     getBaseClasses,
@@ -25,7 +23,13 @@ import {
     IVisionChatModal
 } from '../../../src/Interface'
 import { ConsoleCallbackHandler, CustomChainHandler, CustomStreamingHandler, additionalCallbacks } from '../../../src/handler'
-import { AgentExecutor, ToolCallingAgentOutputParser } from '../../../src/agents'
+import {
+    AgentExecutor,
+    ToolCallingAgentOutputParser,
+    formatToOpenAIToolMessages,
+    ToolsAgentStep,
+    formatLogToMessage
+} from '../../../src/agents'
 import { Moderation, checkInputs, streamResponse } from '../../moderation/Moderation'
 import { formatResponse } from '../../outputparsers/OutputParserHelpers'
 import { addImagesToMessages, llmSupportsVision } from '../../../src/multiModalUtils'

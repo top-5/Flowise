@@ -1,4 +1,4 @@
-import { Ollama, OllamaInput } from '@langchain/community/llms/ollama'
+import { Ollama, OllamaInput } from '@langchain/ollama'
 import { BaseCache } from '@langchain/core/caches'
 import { BaseLLMParams } from '@langchain/core/language_models/llms'
 import { INode, INodeData, INodeParams } from '../../../src/Interface'
@@ -220,7 +220,7 @@ class Ollama_LLMs implements INode {
         if (mirostatEta) obj.mirostatEta = parseFloat(mirostatEta)
         if (mirostatTau) obj.mirostatTau = parseFloat(mirostatTau)
         if (numCtx) obj.numCtx = parseFloat(numCtx)
-        if (numGqa) obj.numGqa = parseFloat(numGqa)
+        if (numGqa) (obj as any).numGqa = parseFloat(numGqa) // Property renamed in newer versions
         if (numGpu) obj.numGpu = parseFloat(numGpu)
         if (numThread) obj.numThread = parseFloat(numThread)
         if (repeatLastN) obj.repeatLastN = parseFloat(repeatLastN)

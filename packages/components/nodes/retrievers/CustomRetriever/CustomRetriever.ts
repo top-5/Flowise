@@ -91,7 +91,7 @@ class CustomRetriever_Retrievers implements INode {
 
         const retriever = CustomRetriever.fromVectorStore(vectorStore, {
             resultFormat,
-            topK: topK ? parseInt(topK, 10) : (vectorStore as any)?.k ?? 4
+            topK: topK ? parseInt(topK, 10) : ((vectorStore as any)?.k ?? 4)
         })
 
         if (output === 'retriever') return retriever
@@ -120,7 +120,11 @@ class CustomRetriever<V extends VectorStore> extends VectorStoreRetriever<V> {
     topK = 4
 
     constructor(input: RetrieverInput<V>) {
-        super(input)
+        const baseInput: VectorStoreRetrieverInput<V> = {
+            ...input,
+            searchType: input.searchType || 'similarity'
+        } as VectorStoreRetrieverInput<V>
+        super(baseInput)
         this.topK = input.topK ?? this.topK
         this.resultFormat = input.resultFormat ?? this.resultFormat
     }

@@ -14,8 +14,8 @@ import { Document } from '@langchain/core/documents'
 import { getFileFromStorage } from './storageUtils'
 import { GetSecretValueCommand, SecretsManagerClient, SecretsManagerClientConfig } from '@aws-sdk/client-secrets-manager'
 import { customGet } from '../nodes/sequentialagents/commonUtils'
-import { TextSplitter } from 'langchain/text_splitter'
-import { DocumentLoader } from 'langchain/document_loaders/base'
+import { TextSplitter } from '@langchain/textsplitters'
+import { DocumentLoader } from '@langchain/core/document_loaders/base'
 import { NodeVM } from '@flowiseai/nodevm'
 import { Sandbox } from '@e2b/code-interpreter'
 import { secureFetch, checkDenyList, secureAxiosRequest } from './httpSecurity'
@@ -746,7 +746,7 @@ export const mapChatMessageToBaseMessage = async (chatmessages: any[] = [], orgI
                                 }
                             })
                         } else if (upload.type === 'stored-file:full') {
-                            const fileLoaderNodeModule = await import('../nodes/documentloaders/File/File')
+                            const fileLoaderNodeModule = await import('../nodes/documentloaders/File/File.js')
                             // @ts-ignore
                             const fileLoaderNodeInstance = new fileLoaderNodeModule.nodeClass()
                             const options = {
@@ -839,25 +839,25 @@ export const convertSchemaToZod = (schema: string | object): ICommonObject => {
         for (const sch of parsedSchema) {
             if (sch.type === 'string') {
                 if (sch.required) {
-                    zodObj[sch.property] = z.string({ required_error: `${sch.property} required` }).describe(sch.description)
+                    zodObj[sch.property] = z.string().describe(sch.description)
                 } else {
                     zodObj[sch.property] = z.string().describe(sch.description).optional()
                 }
             } else if (sch.type === 'number') {
                 if (sch.required) {
-                    zodObj[sch.property] = z.number({ required_error: `${sch.property} required` }).describe(sch.description)
+                    zodObj[sch.property] = z.number().describe(sch.description)
                 } else {
                     zodObj[sch.property] = z.number().describe(sch.description).optional()
                 }
             } else if (sch.type === 'boolean') {
                 if (sch.required) {
-                    zodObj[sch.property] = z.boolean({ required_error: `${sch.property} required` }).describe(sch.description)
+                    zodObj[sch.property] = z.boolean().describe(sch.description)
                 } else {
                     zodObj[sch.property] = z.boolean().describe(sch.description).optional()
                 }
             } else if (sch.type === 'date') {
                 if (sch.required) {
-                    zodObj[sch.property] = z.date({ required_error: `${sch.property} required` }).describe(sch.description)
+                    zodObj[sch.property] = z.date().describe(sch.description)
                 } else {
                     zodObj[sch.property] = z.date().describe(sch.description).optional()
                 }
@@ -1272,11 +1272,14 @@ export const normalizeKeysRecursively = (data: any): any => {
     }
 
     if (data !== null && typeof data === 'object') {
-        return Object.entries(data).reduce((acc, [key, value]) => {
-            const newKey = normalizeSpecialChars(key)
-            acc[newKey] = normalizeKeysRecursively(value)
-            return acc
-        }, {} as Record<string, any>)
+        return Object.entries(data).reduce(
+            (acc, [key, value]) => {
+                const newKey = normalizeSpecialChars(key)
+                acc[newKey] = normalizeKeysRecursively(value)
+                return acc
+            },
+            {} as Record<string, any>
+        )
     }
     return data
 }
@@ -1896,11 +1899,12 @@ export async function parseWithTypeConversion<T extends z.ZodTypeAny>(schema: T,
                 // Handle invalid_type errors (type mismatches)
                 if (issue.code === 'invalid_type' && issue.path.length > 0) {
                     try {
-                        const valueAtPath = getValueAtPath(modifiedArg, issue.path)
+                        const valueAtPath = getValueAtPath(modifiedArg, issue.path as (string | number)[])
                         if (valueAtPath !== undefined) {
-                            const convertedValue = convertValue(valueAtPath, issue.expected, issue.received)
+                            const received = (issue as any).received || typeof valueAtPath
+                            const convertedValue = convertValue(valueAtPath, issue.expected, received)
                             if (convertedValue !== undefined) {
-                                setValueAtPath(modifiedArg, issue.path, convertedValue)
+                                setValueAtPath(modifiedArg, issue.path as (string | number)[], convertedValue)
                                 hasModification = true
                             }
                         }

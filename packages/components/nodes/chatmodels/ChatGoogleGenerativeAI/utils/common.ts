@@ -1,3 +1,4 @@
+import * as crypto from 'crypto'
 import {
     EnhancedGenerateContentResponse,
     Content,
@@ -32,7 +33,6 @@ import { ChatGeneration, ChatGenerationChunk, ChatResult } from '@langchain/core
 import { isLangChainTool } from '@langchain/core/utils/function_calling'
 import { isOpenAITool } from '@langchain/core/language_models/base'
 import { ToolCallChunk } from '@langchain/core/messages/tool'
-import { v4 as uuidv4 } from 'uuid'
 import { jsonSchemaToGeminiParameters, schemaToGenerativeAIParameters } from './zod_to_genai_parameters.js'
 import { GoogleGenerativeAIToolType } from './types.js'
 
@@ -496,7 +496,7 @@ export function mapGenerateContentResultToChatResult(
                 return {
                     ...fc,
                     type: 'tool_call',
-                    id: 'id' in fc && typeof fc.id === 'string' ? fc.id : uuidv4()
+                    id: 'id' in fc && typeof fc.id === 'string' ? fc.id : crypto.randomUUID()
                 }
             }),
             additional_kwargs: {
@@ -577,7 +577,7 @@ export function convertResponseContentToChatGenerationChunk(
                 args: JSON.stringify(fc.args),
                 index: extra.index,
                 type: 'tool_call_chunk' as const,
-                id: 'id' in fc && typeof fc.id === 'string' ? fc.id : uuidv4()
+                id: 'id' in fc && typeof fc.id === 'string' ? fc.id : crypto.randomUUID()
             }))
         )
     }

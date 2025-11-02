@@ -1,4 +1,5 @@
 import { DataSource } from 'typeorm'
+import * as crypto from 'crypto'
 import { z } from 'zod'
 import { RunnableConfig } from '@langchain/core/runnables'
 import { CallbackManagerForToolRun, Callbacks, CallbackManager, parseCallbackConfigArg } from '@langchain/core/callbacks/manager'
@@ -12,8 +13,11 @@ import {
     parseWithTypeConversion
 } from '../../../src/utils'
 import { isValidUUID, isValidURL } from '../../../src/validator'
-import { v4 as uuidv4 } from 'uuid'
 
+// Generate UUID v4 using crypto (ESM import workaround)
+function uuidv4(): string {
+    return crypto.randomUUID()
+}
 class ChatflowTool_Tools implements INode {
     label: string
     name: string

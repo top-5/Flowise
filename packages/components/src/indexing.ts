@@ -1,10 +1,32 @@
 import { VectorStore } from '@langchain/core/vectorstores'
-import { v5 as uuidv5 } from 'uuid'
 import { RecordManagerInterface, UUIDV5_NAMESPACE } from '@langchain/community/indexes/base'
-import { insecureHash } from '@langchain/core/utils/hash'
+// insecureHash removed in LangChain v1.0 - need alternative hashing
 import { Document, DocumentInterface } from '@langchain/core/documents'
-import { BaseDocumentLoader } from 'langchain/document_loaders/base.js'
+import { BaseDocumentLoader } from '@langchain/core/document_loaders/base'
 import { IndexingResult } from './Interface'
+import * as crypto from 'crypto'
+
+// Simple hash function to replace insecureHash (removed in v1.0)
+function simpleHash(input: string): string {
+    return crypto.createHash('sha256').update(input).digest('hex')
+}
+
+// Generate UUID v5 from hash
+function generateUUIDv5(hash: string, namespace: string): string {
+    const combined = namespace + hash
+    const hashBuffer = crypto.createHash('sha1').update(combined).digest()
+    // Set version (4 bits) and variant (2 bits) for UUID v5
+    hashBuffer[6] = (hashBuffer[6] & 0x0f) | 0x50
+    hashBuffer[8] = (hashBuffer[8] & 0x3f) | 0x80
+    // Format as UUID
+    return [
+        hashBuffer.toString('hex', 0, 4),
+        hashBuffer.toString('hex', 4, 6),
+        hashBuffer.toString('hex', 6, 8),
+        hashBuffer.toString('hex', 8, 10),
+        hashBuffer.toString('hex', 10, 16)
+    ].join('-')
+}
 
 type Metadata = Record<string, unknown>
 
@@ -97,14 +119,14 @@ export class _HashedDocument implements HashedDocumentInterface {
     }
 
     private _hashStringToUUID(inputString: string): string {
-        const hash_value = insecureHash(inputString)
-        return uuidv5(hash_value, UUIDV5_NAMESPACE)
+        const hash_value = simpleHash(inputString)
+        return generateUUIDv5(hash_value, UUIDV5_NAMESPACE)
     }
 
     private _hashNestedDictToUUID(data: Record<string, unknown>): string {
         const serialized_data = JSON.stringify(data, Object.keys(data).sort())
-        const hash_value = insecureHash(serialized_data)
-        return uuidv5(hash_value, UUIDV5_NAMESPACE)
+        const hash_value = simpleHash(serialized_data)
+        return generateUUIDv5(hash_value, UUIDV5_NAMESPACE)
     }
 }
 

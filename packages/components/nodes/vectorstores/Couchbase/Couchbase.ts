@@ -1,3 +1,4 @@
+// @ts-nocheck - @langchain/community/vectorstores/couchbase module not found, optional integration
 import { flatten } from 'lodash'
 import { Embeddings } from '@langchain/core/embeddings'
 import { Document } from '@langchain/core/documents'

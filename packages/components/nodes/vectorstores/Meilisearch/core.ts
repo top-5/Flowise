@@ -1,5 +1,6 @@
 import { BaseRetriever, type BaseRetrieverInput } from '@langchain/core/retrievers'
 import { Document } from '@langchain/core/documents'
+// @ts-ignore - ESM module in CommonJS
 import { Meilisearch } from 'meilisearch'
 import { Embeddings } from '@langchain/core/embeddings'
 

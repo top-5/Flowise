@@ -12,7 +12,7 @@ import { Serializable } from '@langchain/core/load/serializable'
 import { renderTemplate } from '@langchain/core/prompts'
 import { ChatGeneration } from '@langchain/core/outputs'
 import { Document } from '@langchain/core/documents'
-import { BaseChain, SerializedLLMChain } from 'langchain/chains'
+import { BaseChain, SerializedLLMChain } from '@langchain/classic/chains'
 import {
     CreateReactAgentParams,
     AgentExecutorInput,
@@ -21,8 +21,8 @@ import {
     BaseMultiActionAgent,
     RunnableAgent,
     StoppingMethod
-} from 'langchain/agents'
-import { formatLogToString } from 'langchain/agents/format_scratchpad/log'
+} from '@langchain/classic/agents'
+import { formatLogToString } from '@langchain/classic/agents/format_scratchpad/log'
 import { IUsedTool } from './Interface'
 import { getErrorMessage } from './error'
 
@@ -356,6 +356,17 @@ export class AgentExecutor extends BaseChain<ChainValues, AgentExecutorOutput> {
      */
     private shouldContinue(iterations: number): boolean {
         return this.maxIterations === undefined || iterations < this.maxIterations
+    }
+
+    /**
+     * Invoke the agent executor with the given inputs.
+     * This method is provided for compatibility with LangChain v1.0 patterns.
+     * @param inputs The input values for the chain.
+     * @param config Optional runnable configuration.
+     * @returns Promise resolving to the agent output.
+     */
+    async invoke(inputs: ChainValues, config?: RunnableConfig): Promise<AgentExecutorOutput> {
+        return this._call(inputs, undefined, config)
     }
 
     async _call(inputs: ChainValues, runManager?: CallbackManagerForChainRun, config?: RunnableConfig): Promise<AgentExecutorOutput> {
@@ -778,7 +789,7 @@ export const createReactAgent = async ({ llm, tools, prompt }: CreateReactAgentP
         tool_names: toolNames.join(', ')
     })
     // TODO: Add .bind to core runnable interface.
-    const llmWithStop = (llm as BaseLanguageModel).bind({
+    const llmWithStop = (llm as BaseLanguageModel).withConfig({
         stop: ['\nObservation:']
     })
     const agent = RunnableSequence.from([
@@ -950,6 +961,40 @@ function parseAIMessageToToolAction(message: AIMessage): ToolsAgentAction[] | Ag
             messageLog
         }
     })
+}
+
+/**
+ * Formats agent steps (ToolsAgentStep[]) into OpenAI-style tool messages
+ * This is the LangChain v1.0 replacement for the removed formatToOpenAIToolMessages
+ */
+export function formatToOpenAIToolMessages(steps: ToolsAgentStep[]): BaseMessage[] {
+    const messages: BaseMessage[] = []
+    for (const step of steps) {
+        // Add the action message log if available
+        if (step.action.messageLog && step.action.messageLog.length > 0) {
+            messages.push(...step.action.messageLog)
+        }
+        // Add the tool response as a FunctionMessage
+        messages.push(
+            new FunctionMessage({
+                content: typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation),
+                name: step.action.tool,
+                additional_kwargs: {
+                    tool_call_id: step.action.toolCallId
+                }
+            })
+        )
+    }
+    return messages
+}
+
+/**
+ * Formats agent steps into a log message string
+ * This is the LangChain v1.0 replacement for the removed formatLogToMessage
+ */
+export function formatLogToMessage(steps: AgentStep[]): BaseMessage {
+    const log = formatLogToString(steps)
+    return new AIMessage(log)
 }
 
 export class ToolCallingAgentOutputParser extends AgentMultiActionOutputParser {

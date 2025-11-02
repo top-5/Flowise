@@ -1,7 +1,17 @@
 import { WatsonxEmbeddings, WatsonxInputEmbeddings } from '@langchain/community/embeddings/ibm'
-import { WatsonxAuth } from '@langchain/community/dist/types/ibm'
 import { ICommonObject, INode, INodeData, INodeParams } from '../../../src/Interface'
 import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../src/utils'
+
+// Type definition from @langchain/community/types/ibm
+interface WatsonxAuth {
+    watsonxAIApikey?: string
+    watsonxAIBearerToken?: string
+    watsonxAIUsername?: string
+    watsonxAIPassword?: string
+    watsonxAIUrl?: string
+    watsonxAIAuthType?: string
+    disableSSL?: boolean
+}
 
 class IBMWatsonx_Embeddings implements INode {
     label: string

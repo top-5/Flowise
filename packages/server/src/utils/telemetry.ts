@@ -32,7 +32,7 @@ export class Telemetry {
 
     async flush(): Promise<void> {
         if (this.postHog) {
-            await this.postHog.shutdownAsync()
+            await (this.postHog as any).shutdownAsync()
         }
     }
 }

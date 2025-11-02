@@ -2,7 +2,7 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { VectorStore } from '@langchain/core/vectorstores'
 import { Document } from '@langchain/core/documents'
 import { PromptTemplate } from '@langchain/core/prompts'
-import { LLMChain } from 'langchain/chains'
+import { LLMChain } from '@langchain/classic/chains'
 
 class TaskCreationChain extends LLMChain {
     constructor(prompt: PromptTemplate, llm: BaseChatModel) {

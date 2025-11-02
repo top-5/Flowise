@@ -1,3 +1,5 @@
+// @ts-ignore - ESM module in CommonJS
+import fetch from 'node-fetch'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import {
     ICommonObject,
@@ -30,8 +32,6 @@ import {
 } from '../utils'
 import { convertMultiOptionsToStringArray, getCredentialData, getCredentialParam, processTemplateVariables } from '../../../src/utils'
 import { addSingleFileToStorage } from '../../../src/storageUtils'
-import fetch from 'node-fetch'
-
 interface ITool {
     agentSelectedTool: string
     agentSelectedToolConfig: ICommonObject

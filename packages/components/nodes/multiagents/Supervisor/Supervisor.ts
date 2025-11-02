@@ -255,7 +255,7 @@ class Supervisor_MultiAgents implements INode {
                 multiModalMessageContent = messages.multiModalMessageContent
 
                 // Force OpenAI to use tool
-                const modelWithTool = llm.bind({
+                const modelWithTool = llm.withConfig({
                     tools: [tool],
                     tool_choice: { type: 'function', function: { name: routerToolName } },
                     signal: abortControllerSignal ? abortControllerSignal.signal : undefined
@@ -513,7 +513,7 @@ class Supervisor_MultiAgents implements INode {
                 multiModalMessageContent = messages.multiModalMessageContent
 
                 // Force OpenAI to use tool
-                const modelWithTool = llm.bind({
+                const modelWithTool = llm.withConfig({
                     tools: [tool],
                     tool_choice: { type: 'function', function: { name: routerToolName } },
                     signal: abortControllerSignal ? abortControllerSignal.signal : undefined

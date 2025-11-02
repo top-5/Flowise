@@ -10,7 +10,7 @@ export class Execution implements IExecution {
     @Column({ type: 'text' })
     executionData: string
 
-    @Column()
+    @Column({ type: 'varchar' })
     state: ExecutionState
 
     @Index()

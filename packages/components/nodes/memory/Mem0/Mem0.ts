@@ -1,3 +1,4 @@
+import * as crypto from 'crypto'
 import { Mem0Memory as BaseMem0Memory, Mem0MemoryInput, ClientOptions } from '@mem0/community'
 import { MemoryOptions, SearchOptions } from 'mem0ai'
 import { BaseMessage } from '@langchain/core/messages'
@@ -6,8 +7,6 @@ import { ICommonObject, IDatabaseEntity } from '../../../src'
 import { IMessage, INode, INodeData, INodeParams, MemoryMethods, MessageType } from '../../../src/Interface'
 import { getBaseClasses, getCredentialData, getCredentialParam, mapChatMessageToBaseMessage } from '../../../src/utils'
 import { DataSource } from 'typeorm'
-import { v4 as uuidv4 } from 'uuid'
-
 interface BufferMemoryExtendedInput {
     sessionId: string
     appDataSource: DataSource
@@ -222,8 +221,8 @@ class Mem0MemoryExtended extends BaseMem0Memory implements MemoryMethods {
     initialUserId: string
     userId: string
     orgId: string
-    memoryKey: string
-    inputKey: string
+    memoryKey: string = 'chat_history'
+    inputKey: string = 'input'
     appDataSource: DataSource
     databaseEntities: IDatabaseEntity
     chatflowid: string
@@ -345,7 +344,7 @@ class Mem0MemoryExtended extends BaseMem0Memory implements MemoryMethods {
                 const systemMessage = {
                     role: 'apiMessage' as MessageType,
                     content: mem0History,
-                    id: uuidv4()
+                    id: crypto.randomUUID()
                 }
                 // Ensure Mem0 history message also conforms structurally if mapChatMessageToBaseMessage is strict
                 chatMessage.unshift(systemMessage as any) // Cast needed if mixing structures

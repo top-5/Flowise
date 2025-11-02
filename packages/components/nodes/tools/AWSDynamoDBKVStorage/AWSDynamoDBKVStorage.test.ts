@@ -1,49 +1,74 @@
-// Mock AWS SDK DynamoDB client
-jest.mock('@aws-sdk/client-dynamodb', () => {
-    const mockSend = jest.fn()
+import { vi } from 'vitest'
+import type { Mock } from 'vitest'
 
-    // Create mock constructors that capture inputs
-    const PutItemCommandMock = jest.fn((input) => ({ input, _type: 'PutItemCommand' }))
-    const QueryCommandMock = jest.fn((input) => ({ input, _type: 'QueryCommand' }))
+// Create mock send function that can be accessed
+const mockSend = vi.fn()
+
+// Create spy functions for tracking command constructor calls
+const PutItemCommandMock = vi.fn()
+const QueryCommandMock = vi.fn()
+
+// Create mock for getAWSCredentials that can be accessed in tests
+const getAWSCredentialsMock = vi.fn(() =>
+    Promise.resolve({
+        accessKeyId: 'test-access-key',
+        secretAccessKey: 'test-secret-key',
+        sessionToken: 'test-session-token'
+    })
+)
+
+// Mock AWS SDK DynamoDB client
+vi.mock('@aws-sdk/client-dynamodb', () => {
+    // Create a mock class for DynamoDBClient
+    class MockDynamoDBClient {
+        send = mockSend
+    }
+
+    // Create mock classes for commands that call the spy functions
+    class MockPutItemCommand {
+        input: any
+        _type = 'PutItemCommand'
+        constructor(input: any) {
+            this.input = input
+            PutItemCommandMock(input)
+        }
+    }
+
+    class MockQueryCommand {
+        input: any
+        _type = 'QueryCommand'
+        constructor(input: any) {
+            this.input = input
+            QueryCommandMock(input)
+        }
+    }
 
     return {
-        DynamoDBClient: jest.fn().mockImplementation(() => ({
-            send: mockSend
-        })),
-        DescribeTableCommand: jest.fn(),
-        ListTablesCommand: jest.fn(),
-        PutItemCommand: PutItemCommandMock,
-        QueryCommand: QueryCommandMock,
-        __mockSend: mockSend
+        DynamoDBClient: MockDynamoDBClient,
+        DescribeTableCommand: vi.fn(),
+        ListTablesCommand: vi.fn(),
+        PutItemCommand: MockPutItemCommand,
+        QueryCommand: MockQueryCommand
     }
 })
 
 // Mock AWS credentials utility
-jest.mock('../../../src/awsToolsUtils', () => ({
+vi.mock('../../../src/awsToolsUtils', () => ({
     AWS_REGIONS: [
         { label: 'US East (N. Virginia)', name: 'us-east-1' },
         { label: 'US West (Oregon)', name: 'us-west-2' }
     ],
     DEFAULT_AWS_REGION: 'us-east-1',
-    getAWSCredentials: jest.fn(() =>
-        Promise.resolve({
-            accessKeyId: 'test-access-key',
-            secretAccessKey: 'test-secret-key',
-            sessionToken: 'test-session-token'
-        })
-    )
+    getAWSCredentials: getAWSCredentialsMock
 }))
 
 // Mock getBaseClasses function
-jest.mock('../../../src/utils', () => ({
-    getBaseClasses: jest.fn(() => ['Tool', 'StructuredTool'])
+vi.mock('../../../src/utils', () => ({
+    getBaseClasses: vi.fn(() => ['Tool', 'StructuredTool'])
 }))
 
 describe('AWSDynamoDBKVStorage', () => {
     let AWSDynamoDBKVStorage_Tools: any
-    let mockSend: jest.Mock
-    let PutItemCommandMock: jest.Mock
-    let QueryCommandMock: jest.Mock
 
     // Helper function to create a node instance
     const createNode = () => new AWSDynamoDBKVStorage_Tools()
@@ -61,17 +86,21 @@ describe('AWSDynamoDBKVStorage', () => {
 
     beforeEach(async () => {
         // Clear all mocks before each test
-        jest.clearAllMocks()
-
-        // Get the mock functions
-        const dynamoDBModule = require('@aws-sdk/client-dynamodb')
-        mockSend = dynamoDBModule.__mockSend
-        PutItemCommandMock = dynamoDBModule.PutItemCommand
-        QueryCommandMock = dynamoDBModule.QueryCommand
+        vi.clearAllMocks()
 
         mockSend.mockReset()
         PutItemCommandMock.mockClear()
         QueryCommandMock.mockClear()
+        getAWSCredentialsMock.mockReset()
+
+        // Reset to default implementation
+        getAWSCredentialsMock.mockImplementation(() =>
+            Promise.resolve({
+                accessKeyId: 'test-access-key',
+                secretAccessKey: 'test-secret-key',
+                sessionToken: 'test-session-token'
+            })
+        )
 
         // Dynamic import to get fresh module instance
         const module = (await import('./AWSDynamoDBKVStorage')) as any
@@ -183,9 +212,8 @@ describe('AWSDynamoDBKVStorage', () => {
 
         it('should handle AWS credentials error', async () => {
             const node = createNode()
-            const { getAWSCredentials } = require('../../../src/awsToolsUtils')
 
-            getAWSCredentials.mockRejectedValueOnce(new Error('AWS Access Key not found'))
+            getAWSCredentialsMock.mockRejectedValueOnce(new Error('AWS Access Key not found'))
 
             const nodeData = { inputs: { region: 'us-east-1' } }
 
@@ -464,16 +492,15 @@ describe('AWSDynamoDBKVStorage', () => {
             [{ accessKeyId: 'test-key', secretAccessKey: 'test-secret' }, 'without session token']
         ])('should work %s', async (credentials, _description) => {
             const node = createNode()
-            const { getAWSCredentials } = require('../../../src/awsToolsUtils')
 
-            getAWSCredentials.mockResolvedValueOnce(credentials)
+            getAWSCredentialsMock.mockResolvedValueOnce(credentials)
             mockSend.mockResolvedValueOnce({})
 
             const nodeData = createNodeData()
 
             const tool = await node.init(nodeData, '', {})
             await tool._call({ key: 'test', value: 'value' })
-            expect(getAWSCredentials).toHaveBeenCalled()
+            expect(getAWSCredentialsMock).toHaveBeenCalled()
         })
     })
 })

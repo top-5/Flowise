@@ -2,16 +2,13 @@ import { flatten } from 'lodash'
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams, IServerSideEventStreamer } from '../../../src/Interface'
 import {
     TreeSummarize,
-    SimpleResponseBuilder,
     Refine,
     BaseEmbedding,
-    ResponseSynthesizer,
     CompactAndRefine,
     QueryEngineTool,
     LLMQuestionGenerator,
     SubQuestionQueryEngine,
     Metadata,
-    serviceContextFromDefaults,
     NodeWithScore
 } from 'llamaindex'
 import { reformatSourceDocuments } from '../EngineUtils'
@@ -59,14 +56,7 @@ class SubQuestionQueryEngine_LlamaIndex implements INode {
                 name: 'embeddings',
                 type: 'BaseEmbedding_LlamaIndex'
             },
-            {
-                label: 'Response Synthesizer',
-                name: 'responseSynthesizer',
-                type: 'ResponseSynthesizer',
-                description:
-                    'ResponseSynthesizer is responsible for sending the query, nodes, and prompt templates to the LLM to generate a response. See <a target="_blank" href="https://ts.llamaindex.ai/modules/response_synthesizer">more</a>',
-                optional: true
-            },
+            // ResponseSynthesizer removed per new LlamaIndex API. Use built-in engine composition.
             {
                 label: 'Return Source Documents',
                 name: 'returnSourceDocuments',
@@ -130,81 +120,16 @@ class SubQuestionQueryEngine_LlamaIndex implements INode {
 }
 
 const prepareEngine = (nodeData: INodeData) => {
-    const embeddings = nodeData.inputs?.embeddings as BaseEmbedding
     const model = nodeData.inputs?.model
-
-    const serviceContext = serviceContextFromDefaults({
-        llm: model,
-        embedModel: embeddings
-    })
 
     let queryEngineTools = nodeData.inputs?.queryEngineTools as QueryEngineTool[]
     queryEngineTools = flatten(queryEngineTools)
 
-    let queryEngine = SubQuestionQueryEngine.fromDefaults({
-        serviceContext,
+    // LlamaIndex v2025+: All response synthesis is internal. No manual ResponseSynthesizer.
+    return SubQuestionQueryEngine.fromDefaults({
         queryEngineTools,
         questionGen: new LLMQuestionGenerator({ llm: model })
     })
-
-    const responseSynthesizerObj = nodeData.inputs?.responseSynthesizer
-    if (responseSynthesizerObj) {
-        if (responseSynthesizerObj.type === 'TreeSummarize') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new TreeSummarize(serviceContext, responseSynthesizerObj.textQAPromptTemplate),
-                serviceContext
-            })
-            queryEngine = SubQuestionQueryEngine.fromDefaults({
-                responseSynthesizer,
-                serviceContext,
-                queryEngineTools,
-                questionGen: new LLMQuestionGenerator({ llm: model })
-            })
-        } else if (responseSynthesizerObj.type === 'CompactAndRefine') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new CompactAndRefine(
-                    serviceContext,
-                    responseSynthesizerObj.textQAPromptTemplate,
-                    responseSynthesizerObj.refinePromptTemplate
-                ),
-                serviceContext
-            })
-            queryEngine = SubQuestionQueryEngine.fromDefaults({
-                responseSynthesizer,
-                serviceContext,
-                queryEngineTools,
-                questionGen: new LLMQuestionGenerator({ llm: model })
-            })
-        } else if (responseSynthesizerObj.type === 'Refine') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new Refine(
-                    serviceContext,
-                    responseSynthesizerObj.textQAPromptTemplate,
-                    responseSynthesizerObj.refinePromptTemplate
-                ),
-                serviceContext
-            })
-            queryEngine = SubQuestionQueryEngine.fromDefaults({
-                responseSynthesizer,
-                serviceContext,
-                queryEngineTools,
-                questionGen: new LLMQuestionGenerator({ llm: model })
-            })
-        } else if (responseSynthesizerObj.type === 'SimpleResponseBuilder') {
-            const responseSynthesizer = new ResponseSynthesizer({
-                responseBuilder: new SimpleResponseBuilder(serviceContext),
-                serviceContext
-            })
-            queryEngine = SubQuestionQueryEngine.fromDefaults({
-                responseSynthesizer,
-                serviceContext,
-                queryEngineTools,
-                questionGen: new LLMQuestionGenerator({ llm: model })
-            })
-        }
-    }
-
-    return queryEngine
 }
 
 module.exports = { nodeClass: SubQuestionQueryEngine_LlamaIndex }

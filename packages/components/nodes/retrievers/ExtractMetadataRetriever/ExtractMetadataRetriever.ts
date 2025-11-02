@@ -135,7 +135,7 @@ class ExtractMetadataRetriever_Retrievers implements INode {
         const retriever = DynamicMetadataRetriever.fromVectorStore(vectorStore, {
             structuredLLM: llm,
             prompt: dynamicMetadataFilterRetrieverPrompt,
-            topK: topK ? parseInt(topK, 10) : (vectorStore as any)?.k ?? 4
+            topK: topK ? parseInt(topK, 10) : ((vectorStore as any)?.k ?? 4)
         })
         retriever.filter = vectorStore?.lc_kwargs?.filter ?? (vectorStore as any).filter
 
@@ -167,7 +167,11 @@ class DynamicMetadataRetriever<V extends VectorStore> extends VectorStoreRetriev
     prompt = ''
 
     constructor(input: RetrieverInput<V>) {
-        super(input)
+        const baseInput: VectorStoreRetrieverInput<V> = {
+            ...input,
+            searchType: input.searchType || 'similarity'
+        } as VectorStoreRetrieverInput<V>
+        super(baseInput)
         this.topK = input.topK ?? this.topK
         this.structuredLLM = input.structuredLLM ?? this.structuredLLM
         this.prompt = input.prompt ?? this.prompt

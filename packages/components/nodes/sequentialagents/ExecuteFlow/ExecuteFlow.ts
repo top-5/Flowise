@@ -1,6 +1,12 @@
 import { DataSource } from 'typeorm'
+import * as crypto from 'crypto'
 import { getCredentialData, getCredentialParam, getVars, executeJavaScriptCode, createCodeExecutionSandbox } from '../../../src/utils'
 import { isValidUUID, isValidURL } from '../../../src/validator'
+
+// Generate UUID v4 using crypto (ESM import workaround)
+function uuidv4(): string {
+    return crypto.randomUUID()
+}
 import {
     ICommonObject,
     IDatabaseEntity,
@@ -12,8 +18,6 @@ import {
     ISeqAgentsState
 } from '../../../src/Interface'
 import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages'
-import { v4 as uuidv4 } from 'uuid'
-
 class ExecuteFlow_SeqAgents implements INode {
     label: string
     name: string

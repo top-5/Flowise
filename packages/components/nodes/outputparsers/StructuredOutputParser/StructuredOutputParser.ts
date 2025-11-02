@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { BaseOutputParser } from '@langchain/core/output_parsers'
-import { StructuredOutputParser as LangchainStructuredOutputParser } from 'langchain/output_parsers'
+import { StructuredOutputParser as LangchainStructuredOutputParser } from '@langchain/classic/output_parsers'
 import { CATEGORY } from '../OutputParserHelpers'
 import { convertSchemaToZod, getBaseClasses, INode, INodeData, INodeParams } from '../../../src'
+// @ts-ignore - ESM module in CommonJS
 import { jsonrepair } from 'jsonrepair'
 
 class StructuredOutputParser implements INode {

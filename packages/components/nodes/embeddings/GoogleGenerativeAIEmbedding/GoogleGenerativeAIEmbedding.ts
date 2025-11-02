@@ -5,7 +5,7 @@ import { TaskType } from '@google/generative-ai'
 import { MODEL_TYPE, getModels } from '../../../src/modelLoader'
 
 class GoogleGenerativeAIEmbeddingsWithStripNewLines extends GoogleGenerativeAIEmbeddings {
-    stripNewLines: boolean
+    declare stripNewLines: boolean
 
     constructor(params: GoogleGenerativeAIEmbeddingsParams & { stripNewLines?: boolean }) {
         super(params)

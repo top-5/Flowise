@@ -1,6 +1,6 @@
 import { ZepMemory, ZepMemoryInput } from '@langchain/community/memory/zep'
 import { BaseMessage } from '@langchain/core/messages'
-import { InputValues, MemoryVariables, OutputValues } from 'langchain/memory'
+import { InputValues, MemoryVariables, OutputValues } from '@langchain/core/memory'
 import { IMessage, INode, INodeData, INodeParams, MemoryMethods, MessageType, ICommonObject } from '../../../src/Interface'
 import {
     convertBaseMessagetoIMessage,
@@ -124,7 +124,6 @@ const initializeZep = async (nodeData: INodeData, options: ICommonObject): Promi
         baseURL,
         aiPrefix,
         humanPrefix,
-        returnMessages: true,
         memoryKey,
         inputKey,
         sessionId,
@@ -139,16 +138,22 @@ const initializeZep = async (nodeData: INodeData, options: ICommonObject): Promi
 interface ZepMemoryExtendedInput {
     k?: number
     orgId: string
+    inputKey?: string
+    memoryKey?: string
 }
 
 class ZepMemoryExtended extends ZepMemory implements MemoryMethods {
     lastN?: number
     orgId = ''
+    inputKey = 'input'
+    memoryKey = 'chat_history'
 
     constructor(fields: ZepMemoryInput & ZepMemoryExtendedInput) {
         super(fields)
         this.lastN = fields.k
         this.orgId = fields.orgId
+        if (fields.inputKey) this.inputKey = fields.inputKey
+        if (fields.memoryKey) this.memoryKey = fields.memoryKey
     }
 
     async loadMemoryVariables(values: InputValues, overrideSessionId = ''): Promise<MemoryVariables> {

@@ -1,5 +1,5 @@
 import { BaseMessage } from '@langchain/core/messages'
-import { BufferMemory, BufferWindowMemory, ConversationSummaryMemory, ConversationSummaryBufferMemory } from 'langchain/memory'
+import { BufferMemory, BufferWindowMemory, ConversationSummaryMemory, ConversationSummaryBufferMemory } from '@langchain/classic/memory'
 import { Moderation } from '../nodes/moderation/Moderation'
 
 /**
@@ -355,9 +355,13 @@ export interface MemoryMethods {
     ): Promise<IMessage[] | BaseMessage[]>
     addChatMessages(msgArray: { text: string; type: MessageType }[], overrideSessionId?: string): Promise<void>
     clearChatMessages(overrideSessionId?: string): Promise<void>
+    memoryKey?: string
+    inputKey?: string
 }
 
 export abstract class FlowiseMemory extends BufferMemory implements MemoryMethods {
+    declare memoryKey: string
+    declare inputKey: string
     abstract getChatMessages(
         overrideSessionId?: string,
         returnBaseMessages?: boolean,
@@ -368,6 +372,8 @@ export abstract class FlowiseMemory extends BufferMemory implements MemoryMethod
 }
 
 export abstract class FlowiseWindowMemory extends BufferWindowMemory implements MemoryMethods {
+    declare memoryKey: string
+    declare inputKey: string
     abstract getChatMessages(
         overrideSessionId?: string,
         returnBaseMessages?: boolean,
@@ -378,6 +384,8 @@ export abstract class FlowiseWindowMemory extends BufferWindowMemory implements 
 }
 
 export abstract class FlowiseSummaryMemory extends ConversationSummaryMemory implements MemoryMethods {
+    declare memoryKey: string
+    declare inputKey: string
     abstract getChatMessages(
         overrideSessionId?: string,
         returnBaseMessages?: boolean,
@@ -388,6 +396,8 @@ export abstract class FlowiseSummaryMemory extends ConversationSummaryMemory imp
 }
 
 export abstract class FlowiseSummaryBufferMemory extends ConversationSummaryBufferMemory implements MemoryMethods {
+    declare memoryKey: string
+    declare inputKey: string
     abstract getChatMessages(
         overrideSessionId?: string,
         returnBaseMessages?: boolean,

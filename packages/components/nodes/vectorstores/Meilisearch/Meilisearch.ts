@@ -1,10 +1,11 @@
 import { getCredentialData, getCredentialParam } from '../../../src'
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
+// @ts-ignore - ESM module in CommonJS
 import { Meilisearch } from 'meilisearch'
 import { MeilisearchRetriever } from './core'
 import { flatten } from 'lodash'
 import { Document } from '@langchain/core/documents'
-import { v4 as uuidv4 } from 'uuid'
+import * as crypto from 'crypto'
 import { Embeddings } from '@langchain/core/embeddings'
 
 class MeilisearchRetriever_node implements INode {
@@ -128,7 +129,7 @@ class MeilisearchRetriever_node implements INode {
             const finalDocs = []
             for (let i = 0; i < flattenDocs.length; i += 1) {
                 if (flattenDocs[i] && flattenDocs[i].pageContent) {
-                    const uniqueId = uuidv4()
+                    const uniqueId = crypto.randomUUID()
                     const { pageContent, metadata } = flattenDocs[i]
                     const docEmbedding = await embeddings.embedQuery(pageContent)
                     embeddingDimension = docEmbedding.length
@@ -152,13 +153,10 @@ class MeilisearchRetriever_node implements INode {
                 try {
                     const deleteResponse = await client.deleteIndex(indexUid)
                     taskUid_created = deleteResponse.taskUid
-                    let deleteTaskStatus = await client.getTask(taskUid_created)
+                    const deleteTaskStatus = await (client as any).waitForTask(taskUid_created)
 
-                    while (deleteTaskStatus.status !== 'succeeded') {
-                        deleteTaskStatus = await client.getTask(taskUid_created)
-                        if (deleteTaskStatus.error !== null || deleteTaskStatus.status === 'failed') {
-                            throw new Error('Error during index deletion task: ' + deleteTaskStatus.error)
-                        }
+                    if (deleteTaskStatus.error !== null || deleteTaskStatus.status === 'failed') {
+                        throw new Error('Error during index deletion task: ' + deleteTaskStatus.error)
                     }
                 } catch (error) {
                     console.error(error)
@@ -176,13 +174,10 @@ class MeilisearchRetriever_node implements INode {
                 try {
                     const createResponse = await client.createIndex(indexUid, { primaryKey: 'objectID' })
                     taskUid_created = createResponse.taskUid
-                    let createTaskStatus = await client.getTask(taskUid_created)
+                    const createTaskStatus = await (client as any).waitForTask(taskUid_created)
 
-                    while (createTaskStatus.status !== 'succeeded') {
-                        createTaskStatus = await client.getTask(taskUid_created)
-                        if (createTaskStatus.error !== null || createTaskStatus.status === 'failed') {
-                            throw new Error('Error during index creation task: ' + createTaskStatus.error)
-                        }
+                    if (createTaskStatus.error !== null || createTaskStatus.status === 'failed') {
+                        throw new Error('Error during index creation task: ' + createTaskStatus.error)
                     }
                     index = await client.getIndex(indexUid)
                 } catch (taskError) {
@@ -202,12 +197,9 @@ class MeilisearchRetriever_node implements INode {
                 })
                 const addResponse = await index.addDocuments(finalDocs)
                 taskUid_created = addResponse.taskUid
-                let AddTaskStatus = await client.getTask(taskUid_created)
-                while (AddTaskStatus.status !== 'succeeded') {
-                    AddTaskStatus = await client.getTask(taskUid_created)
-                    if (AddTaskStatus.error !== null || AddTaskStatus.status === 'failed') {
-                        throw new Error('Error during documents adding task: ' + AddTaskStatus.error)
-                    }
+                const AddTaskStatus = await (client as any).waitForTask(taskUid_created)
+                if (AddTaskStatus.error !== null || AddTaskStatus.status === 'failed') {
+                    throw new Error('Error during documents adding task: ' + AddTaskStatus.error)
                 }
                 index = await client.getIndex(indexUid)
             } catch (error) {

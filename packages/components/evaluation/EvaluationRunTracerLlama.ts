@@ -1,8 +1,6 @@
-import { ChatMessage, LLMEndEvent, LLMStartEvent, LLMStreamEvent, MessageContentTextDetail, RetrievalEndEvent, Settings } from 'llamaindex'
+import { ChatMessage, LLMEndEvent, LLMStartEvent, LLMStreamEvent, MessageContentTextDetail, RetrieveEndEvent, Settings } from 'llamaindex'
 import { EvaluationRunner } from './EvaluationRunner'
 import { additionalCallbacks, ICommonObject, INodeData } from '../src'
-import { RetrievalStartEvent } from 'llamaindex/dist/type/llm/types'
-import { AgentEndEvent, AgentStartEvent } from 'llamaindex/dist/type/agent/types'
 import { encoding_for_model } from '@dqbd/tiktoken'
 import { MessageContent } from '@langchain/core/messages'
 
@@ -20,7 +18,7 @@ export class EvaluationRunTracerLlama {
 
     static constructCallBacks = () => {
         if (!EvaluationRunTracerLlama.cbInit) {
-            Settings.callbackManager.on('llm-start', (event: LLMStartEvent) => {
+            Settings.callbackManager.on('llm-start', (event: any) => {
                 const evalID = (event as any).reason.parent?.caller?.evaluationRunId || (event as any).reason.caller?.evaluationRunId
                 if (!evalID) return
                 const model = (event as any).reason?.caller?.model
@@ -29,7 +27,7 @@ export class EvaluationRunTracerLlama {
                     try {
                         const encoding = encoding_for_model(model)
                         if (encoding) {
-                            const { messages } = event.detail.payload
+                            const messages = (event as any).detail?.payload?.messages || []
                             let tokenCount = messages.reduce((count: number, message: ChatMessage) => {
                                 return count + encoding.encode(extractText(message.content)).length
                             }, 0)
@@ -40,16 +38,16 @@ export class EvaluationRunTracerLlama {
                         // catch the error and continue to work.
                     }
                 }
-                EvaluationRunTracerLlama.startTimes.set(evalID + '_llm', event.timeStamp)
+                EvaluationRunTracerLlama.startTimes.set(evalID + '_llm', (event as any).timeStamp || Date.now())
             })
-            Settings.callbackManager.on('llm-end', (event: LLMEndEvent) => {
+            Settings.callbackManager.on('llm-end', (event: any) => {
                 this.calculateAndSetMetrics(event, 'llm')
             })
-            Settings.callbackManager.on('llm-stream', (event: LLMStreamEvent) => {
+            Settings.callbackManager.on('llm-stream', (event: any) => {
                 const evalID = (event as any).reason.parent?.caller?.evaluationRunId || (event as any).reason.caller?.evaluationRunId
                 if (!evalID) return
-                const { chunk } = event.detail.payload
-                const { delta } = chunk
+                const chunk = (event as any).detail?.payload?.chunk
+                const delta = chunk?.delta
                 const model = (event as any).reason?.caller?.model
                 try {
                     const encoding = encoding_for_model(model)
@@ -62,22 +60,22 @@ export class EvaluationRunTracerLlama {
                     // catch the error and continue to work.
                 }
             })
-            Settings.callbackManager.on('retrieve-start', (event: RetrievalStartEvent) => {
+            Settings.callbackManager.on('retrieve-start', (event: any) => {
                 const evalID = (event as any).reason.parent?.caller?.evaluationRunId || (event as any).reason.caller?.evaluationRunId
                 if (evalID) {
-                    EvaluationRunTracerLlama.startTimes.set(evalID + '_retriever', event.timeStamp)
+                    EvaluationRunTracerLlama.startTimes.set(evalID + '_retriever', event.timeStamp || Date.now())
                 }
             })
-            Settings.callbackManager.on('retrieve-end', (event: RetrievalEndEvent) => {
+            Settings.callbackManager.on('retrieve-end', (event: any) => {
                 this.calculateAndSetMetrics(event, 'retriever')
             })
-            Settings.callbackManager.on('agent-start', (event: AgentStartEvent) => {
+            Settings.callbackManager.on('agent-start', (event: any) => {
                 const evalID = (event as any).reason.parent?.caller?.evaluationRunId || (event as any).reason.caller?.evaluationRunId
                 if (evalID) {
-                    EvaluationRunTracerLlama.startTimes.set(evalID + '_agent', event.timeStamp)
+                    EvaluationRunTracerLlama.startTimes.set(evalID + '_agent', event.timeStamp || Date.now())
                 }
             })
-            Settings.callbackManager.on('agent-end', (event: AgentEndEvent) => {
+            Settings.callbackManager.on('agent-end', (event: any) => {
                 this.calculateAndSetMetrics(event, 'agent')
             })
             EvaluationRunTracerLlama.cbInit = true

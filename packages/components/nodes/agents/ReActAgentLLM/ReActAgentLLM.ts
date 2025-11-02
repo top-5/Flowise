@@ -1,5 +1,5 @@
 import { flatten } from 'lodash'
-import { AgentExecutor } from 'langchain/agents'
+import { AgentExecutor } from '@langchain/classic/agents'
 import { pull } from 'langchain/hub'
 import { Tool } from '@langchain/core/tools'
 import type { PromptTemplate } from '@langchain/core/prompts'

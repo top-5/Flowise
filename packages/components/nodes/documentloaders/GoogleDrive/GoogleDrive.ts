@@ -1,6 +1,6 @@
 import { omit } from 'lodash'
 import { ICommonObject, IDocument, INode, INodeData, INodeParams, INodeOptionsValue } from '../../../src/Interface'
-import { TextSplitter } from 'langchain/text_splitter'
+import { TextSplitter } from '@langchain/textsplitters'
 import {
     convertMultiOptionsToStringArray,
     getCredentialData,
@@ -616,13 +616,13 @@ class GoogleDrive_DocumentLoaders implements INode {
 
                 case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
                 case 'application/vnd.ms-excel': {
-                    const excelLoader = new LoadOfSheet(tempFilePath)
+                    const excelLoader = new LoadOfSheet(tempFilePath) as any
                     docs = await excelLoader.load()
                     break
                 }
                 case 'application/vnd.openxmlformats-officedocument.presentationml.presentation':
                 case 'application/vnd.ms-powerpoint': {
-                    const pptxLoader = new PowerpointLoader(tempFilePath)
+                    const pptxLoader = new PowerpointLoader(tempFilePath) as any
                     docs = await pptxLoader.load()
                     break
                 }

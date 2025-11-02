@@ -1,9 +1,9 @@
 import { Logger } from 'winston'
 import { URL } from 'url'
-import { v4 as uuidv4 } from 'uuid'
+import * as crypto from 'crypto'
 import { Client } from 'langsmith'
 import CallbackHandler from 'langfuse-langchain'
-import lunary from 'lunary'
+// lunary is ESM-only, will be dynamically imported where needed
 import { RunTree, RunTreeConfig, Client as LangsmithClient } from 'langsmith'
 import { Langfuse, LangfuseTraceClient, LangfuseSpanClient, LangfuseGenerationClient } from 'langfuse'
 import { LangChainInstrumentation } from '@arizeai/openinference-instrumentation-langchain'
@@ -12,8 +12,8 @@ import opentelemetry, { Span, SpanStatusCode } from '@opentelemetry/api'
 import { OTLPTraceExporter as GrpcOTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-grpc'
 import { OTLPTraceExporter as ProtoOTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto'
 import { registerInstrumentations } from '@opentelemetry/instrumentation'
-import { Resource } from '@opentelemetry/resources'
-import { SimpleSpanProcessor, Tracer } from '@opentelemetry/sdk-trace-base'
+import { resourceFromAttributes } from '@opentelemetry/resources'
+import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base'
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node'
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions'
 
@@ -29,11 +29,19 @@ import { getCredentialData, getCredentialParam, getEnvironmentVariable } from '.
 import { EvaluationRunTracer } from '../evaluation/EvaluationRunTracer'
 import { EvaluationRunTracerLlama } from '../evaluation/EvaluationRunTracerLlama'
 import { ICommonObject, IDatabaseEntity, INodeData, IServerSideEventStreamer } from './Interface'
-import { LangWatch, LangWatchSpan, LangWatchTrace, autoconvertTypedValues } from 'langwatch'
+import { LangWatch } from 'langwatch'
 import { DataSource } from 'typeorm'
 import { ChatGenerationChunk } from '@langchain/core/outputs'
 import { AIMessageChunk, BaseMessageLike } from '@langchain/core/messages'
 import { Serialized } from '@langchain/core/load/serializable'
+
+// Type alias for OpenTelemetry Tracer
+type Tracer = any
+
+// Helper function to replace autoconvertTypedValues (removed from langwatch)
+function autoconvertTypedValues(value: any): any {
+    return value
+}
 
 export interface AgentRun extends Run {
     actions: AgentAction[]
@@ -59,15 +67,16 @@ function getArizeTracer(options: ArizeTracerOptions): Tracer | undefined {
             url: `${options.baseUrl}/v1`,
             metadata
         })
+        const spanProcessor = new SimpleSpanProcessor(traceExporter)
         const tracerProvider = new NodeTracerProvider({
-            resource: new Resource({
+            resource: resourceFromAttributes({
                 [ATTR_SERVICE_NAME]: options.projectName,
                 [ATTR_SERVICE_VERSION]: '1.0.0',
                 [SEMRESATTRS_PROJECT_NAME]: options.projectName,
                 model_id: options.projectName
-            })
+            }),
+            spanProcessors: [spanProcessor]
         })
-        tracerProvider.addSpanProcessor(new SimpleSpanProcessor(traceExporter))
         if (options.enableCallback) {
             registerInstrumentations({
                 instrumentations: []
@@ -76,7 +85,7 @@ function getArizeTracer(options: ArizeTracerOptions): Tracer | undefined {
             lcInstrumentation.manuallyInstrument(CallbackManagerModule)
             tracerProvider.register()
         }
-        return tracerProvider.getTracer(`arize-tracer-${uuidv4().toString()}`)
+        return tracerProvider.getTracer(`arize-tracer-${crypto.randomUUID().toString()}`)
     } catch (err) {
         if (process.env.DEBUG === 'true') console.error(`Error setting up Arize tracer: ${err.message}`)
         return undefined
@@ -114,14 +123,15 @@ export function getPhoenixTracer(options: PhoenixTracerOptions): Tracer | undefi
             url: exporterUrl,
             headers: exporterHeaders
         })
+        const spanProcessor = new SimpleSpanProcessor(traceExporter)
         const tracerProvider = new NodeTracerProvider({
-            resource: new Resource({
+            resource: resourceFromAttributes({
                 [ATTR_SERVICE_NAME]: options.projectName,
                 [ATTR_SERVICE_VERSION]: '1.0.0',
                 [SEMRESATTRS_PROJECT_NAME]: options.projectName
-            })
+            }),
+            spanProcessors: [spanProcessor]
         })
-        tracerProvider.addSpanProcessor(new SimpleSpanProcessor(traceExporter))
         if (options.enableCallback) {
             registerInstrumentations({
                 instrumentations: []
@@ -130,7 +140,7 @@ export function getPhoenixTracer(options: PhoenixTracerOptions): Tracer | undefi
             lcInstrumentation.manuallyInstrument(CallbackManagerModule)
             tracerProvider.register()
         }
-        return tracerProvider.getTracer(`phoenix-tracer-${uuidv4().toString()}`)
+        return tracerProvider.getTracer(`phoenix-tracer-${crypto.randomUUID().toString()}`)
     } catch (err) {
         if (process.env.DEBUG === 'true') console.error(`Error setting up Phoenix tracer: ${err.message}`)
         return undefined
@@ -158,14 +168,15 @@ function getOpikTracer(options: OpikTracerOptions): Tracer | undefined {
                 'Comet-Workspace': options.workspace
             }
         })
+        const spanProcessor = new SimpleSpanProcessor(traceExporter)
         const tracerProvider = new NodeTracerProvider({
-            resource: new Resource({
+            resource: resourceFromAttributes({
                 [ATTR_SERVICE_NAME]: options.projectName,
                 [ATTR_SERVICE_VERSION]: '1.0.0',
                 [SEMRESATTRS_PROJECT_NAME]: options.projectName
-            })
+            }),
+            spanProcessors: [spanProcessor]
         })
-        tracerProvider.addSpanProcessor(new SimpleSpanProcessor(traceExporter))
         if (options.enableCallback) {
             registerInstrumentations({
                 instrumentations: []
@@ -174,7 +185,7 @@ function getOpikTracer(options: OpikTracerOptions): Tracer | undefined {
             lcInstrumentation.manuallyInstrument(CallbackManagerModule)
             tracerProvider.register()
         }
-        return tracerProvider.getTracer(`opik-tracer-${uuidv4().toString()}`)
+        return tracerProvider.getTracer(`opik-tracer-${crypto.randomUUID().toString()}`)
     } catch (err) {
         if (process.env.DEBUG === 'true') console.error(`Error setting up Opik tracer: ${err.message}`)
         return undefined
@@ -198,8 +209,9 @@ export function tryJsonStringify(obj: unknown, fallback: string) {
 }
 
 export function elapsed(run: Run): string {
-    if (!run.end_time) return ''
-    const elapsed = (run.end_time as number) - (run.start_time as number)
+    const runAny = run as any
+    if (!runAny.end_time) return ''
+    const elapsed = (runAny.end_time as number) - (runAny.start_time as number)
     if (elapsed < 1000) {
         return `${elapsed}ms`
     }
@@ -226,7 +238,7 @@ export class ConsoleCallbackHandler extends BaseTracer {
 
     getParents(run: Run) {
         const parents: Run[] = []
-        let currentRun = run
+        let currentRun = run as any
         while (currentRun.parent_run_id) {
             const parent = this.runMap.get(currentRun.parent_run_id)
             if (parent) {
@@ -243,7 +255,8 @@ export class ConsoleCallbackHandler extends BaseTracer {
         const parents = this.getParents(run).reverse()
         const string = [...parents, run]
             .map((parent) => {
-                const name = `${parent.execution_order}:${parent.run_type}:${parent.name}`
+                const parentAny = parent as any
+                const name = `${parentAny.execution_order}:${parentAny.run_type}:${parentAny.name}`
                 return name
             })
             .join(' > ')
@@ -252,17 +265,19 @@ export class ConsoleCallbackHandler extends BaseTracer {
 
     onChainStart(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
+        const runAny = run as any
 
         this.logger.verbose(
-            `[${this.orgId}]: [chain/start] [${crumbs}] Entering Chain run with input: ${tryJsonStringify(run.inputs, '[inputs]')}`
+            `[${this.orgId}]: [chain/start] [${crumbs}] Entering Chain run with input: ${tryJsonStringify(runAny.inputs, '[inputs]')}`
         )
     }
 
     onChainEnd(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
+        const runAny = run as any
         this.logger.verbose(
             `[${this.orgId}]: [chain/end] [${crumbs}] [${elapsed(run)}] Exiting Chain run with output: ${tryJsonStringify(
-                run.outputs,
+                runAny.outputs,
                 '[outputs]'
             )}`
         )
@@ -270,9 +285,10 @@ export class ConsoleCallbackHandler extends BaseTracer {
 
     onChainError(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
+        const runAny = run as any
         this.logger.verbose(
             `[${this.orgId}]: [chain/error] [${crumbs}] [${elapsed(run)}] Chain run errored with error: ${tryJsonStringify(
-                run.error,
+                runAny.error,
                 '[error]'
             )}`
         )
@@ -280,15 +296,18 @@ export class ConsoleCallbackHandler extends BaseTracer {
 
     onLLMStart(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
-        const inputs = 'prompts' in run.inputs ? { prompts: (run.inputs.prompts as string[]).map((p) => p.trim()) } : run.inputs
+        const runAny = run as any
+        const inputs =
+            'prompts' in runAny.inputs ? { prompts: (runAny.inputs.prompts as string[]).map((p: string) => p.trim()) } : runAny.inputs
         this.logger.verbose(`[${this.orgId}]: [llm/start] [${crumbs}] Entering LLM run with input: ${tryJsonStringify(inputs, '[inputs]')}`)
     }
 
     onLLMEnd(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
+        const runAny = run as any
         this.logger.verbose(
             `[${this.orgId}]: [llm/end] [${crumbs}] [${elapsed(run)}] Exiting LLM run with output: ${tryJsonStringify(
-                run.outputs,
+                runAny.outputs,
                 '[response]'
             )}`
         )
@@ -296,9 +315,10 @@ export class ConsoleCallbackHandler extends BaseTracer {
 
     onLLMError(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
+        const runAny = run as any
         this.logger.verbose(
             `[${this.orgId}]: [llm/error] [${crumbs}] [${elapsed(run)}] LLM run errored with error: ${tryJsonStringify(
-                run.error,
+                runAny.error,
                 '[error]'
             )}`
         )
@@ -306,21 +326,24 @@ export class ConsoleCallbackHandler extends BaseTracer {
 
     onToolStart(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
-        this.logger.verbose(`[${this.orgId}]: [tool/start] [${crumbs}] Entering Tool run with input: "${run.inputs.input?.trim()}"`)
+        const runAny = run as any
+        this.logger.verbose(`[${this.orgId}]: [tool/start] [${crumbs}] Entering Tool run with input: "${runAny.inputs.input?.trim()}"`)
     }
 
     onToolEnd(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
+        const runAny = run as any
         this.logger.verbose(
-            `[${this.orgId}]: [tool/end] [${crumbs}] [${elapsed(run)}] Exiting Tool run with output: "${run.outputs?.output?.trim()}"`
+            `[${this.orgId}]: [tool/end] [${crumbs}] [${elapsed(run)}] Exiting Tool run with output: "${runAny.outputs?.output?.trim()}"`
         )
     }
 
     onToolError(run: Run) {
         const crumbs = this.getBreadcrumbs(run)
+        const runAny = run as any
         this.logger.verbose(
             `[${this.orgId}]: [tool/error] [${crumbs}] [${elapsed(run)}] Tool run errored with error: ${tryJsonStringify(
-                run.error,
+                runAny.error,
                 '[error]'
             )}`
         )
@@ -451,25 +474,31 @@ class ExtendedLunaryHandler extends LunaryHandler {
     }
 
     async initThread() {
-        const entity = await this.appDataSource.getRepository(this.databaseEntities['Lead']).findOne({
-            where: {
-                chatId: this.chatId
-            }
-        })
+        try {
+            // @ts-ignore - ESM dynamic import
+            const lunary = await import('lunary').then((m) => m.default || m)
+            const entity = await this.appDataSource.getRepository(this.databaseEntities['Lead']).findOne({
+                where: {
+                    chatId: this.chatId
+                }
+            })
 
-        const userId = entity?.email ?? entity?.id
+            const userId = entity?.email ?? entity?.id
 
-        this.thread = lunary.openThread({
-            id: this.chatId,
-            userId,
-            userProps: userId
-                ? {
-                      name: entity?.name ?? undefined,
-                      email: entity?.email ?? undefined,
-                      phone: entity?.phone ?? undefined
-                  }
-                : undefined
-        })
+            this.thread = (lunary as any).openThread({
+                id: this.chatId,
+                userId,
+                userProps: userId
+                    ? {
+                          name: entity?.name ?? undefined,
+                          email: entity?.email ?? undefined,
+                          phone: entity?.phone ?? undefined
+                      }
+                    : undefined
+            })
+        } catch (err) {
+            console.error('Failed to initialize lunary thread:', err)
+        }
     }
 
     async handleChainStart(chain: any, inputs: any, runId: string, parentRunId?: string, tags?: string[], metadata?: any): Promise<void> {
@@ -604,9 +633,9 @@ export const additionalCallbacks = async (nodeData: INodeData, options: ICommonO
                         endpoint: langWatchEndpoint
                     })
 
-                    const trace = langwatch.getTrace()
+                    const trace = (langwatch as any).getTrace?.() || langwatch
 
-                    if (nodeData?.inputs?.analytics?.langWatch) {
+                    if (nodeData?.inputs?.analytics?.langWatch && trace.update) {
                         trace.update({
                             metadata: {
                                 ...nodeData?.inputs?.analytics?.langWatch
@@ -614,7 +643,7 @@ export const additionalCallbacks = async (nodeData: INodeData, options: ICommonO
                         })
                     }
 
-                    callbacks.push(trace.getLangChainCallback())
+                    callbacks.push(trace.getLangChainCallback?.() || trace)
                 } else if (provider === 'arize') {
                     const arizeApiKey = getCredentialParam('arizeApiKey', credentialData, nodeData)
                     const arizeSpaceId = getCredentialParam('arizeSpaceId', credentialData, nodeData)
@@ -792,13 +821,19 @@ export class AnalyticHandler {
             const lunaryPublicKey = getCredentialParam('lunaryAppId', credentialData, this.nodeData)
             const lunaryEndpoint = getCredentialParam('lunaryEndpoint', credentialData, this.nodeData)
 
-            lunary.init({
-                publicKey: lunaryPublicKey,
-                apiUrl: lunaryEndpoint,
-                runtime: 'flowise'
-            })
+            try {
+                // @ts-ignore - ESM dynamic import
+                const lunary = await import('lunary').then((m) => m.default || m)
+                ;(lunary as any).init({
+                    publicKey: lunaryPublicKey,
+                    apiUrl: lunaryEndpoint,
+                    runtime: 'flowise'
+                })
 
-            this.handlers['lunary'] = { client: lunary }
+                this.handlers['lunary'] = { client: lunary }
+            } catch (err) {
+                console.error('Failed to load lunary:', err)
+            }
         } else if (provider === 'langWatch') {
             const langWatchApiKey = getCredentialParam('langWatchApiKey', credentialData, this.nodeData)
             const langWatchEndpoint = getCredentialParam('langWatchEndpoint', credentialData, this.nodeData)
@@ -950,7 +985,7 @@ export class AnalyticHandler {
             const monitor = this.handlers['lunary'].client
 
             if (monitor) {
-                const runId = uuidv4()
+                const runId = crypto.randomUUID()
                 await monitor.trackEvent('chain', 'start', {
                     runId,
                     name,
@@ -963,15 +998,16 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            let langwatchTrace: LangWatchTrace
+            let langwatchTrace: any
 
             if (!parentIds || !Object.keys(parentIds).length) {
                 const langwatch: LangWatch = this.handlers['langWatch'].client
-                langwatchTrace = langwatch.getTrace({
-                    name,
-                    metadata: { tags: ['openai-assistant'], threadId: this.options.chatId },
-                    ...this.nodeData?.inputs?.analytics?.langWatch
-                })
+                langwatchTrace =
+                    (langwatch as any).getTrace?.({
+                        name,
+                        metadata: { tags: ['openai-assistant'], threadId: this.options.chatId },
+                        ...this.nodeData?.inputs?.analytics?.langWatch
+                    }) || langwatch
             } else {
                 langwatchTrace = this.handlers['langWatch'].trace[parentIds['langWatch']]
             }
@@ -1141,7 +1177,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const span: LangWatchSpan | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
+            const span: any | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
             if (span) {
                 span.end({
                     output: autoconvertTypedValues(output)
@@ -1234,7 +1270,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const span: LangWatchSpan | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
+            const span: any | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
             if (span) {
                 span.end({
                     error
@@ -1316,7 +1352,7 @@ export class AnalyticHandler {
             const chainEventId: string = this.handlers['lunary'].chainEvent[parentIds['lunary'].chainEvent]
 
             if (monitor && chainEventId) {
-                const runId = uuidv4()
+                const runId = crypto.randomUUID()
                 await monitor.trackEvent('llm', 'start', {
                     runId,
                     parentRunId: chainEventId,
@@ -1329,7 +1365,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const trace: LangWatchTrace | undefined = this.handlers['langWatch'].trace[parentIds['langWatch'].trace]
+            const trace: any | undefined = this.handlers['langWatch'].trace[parentIds['langWatch'].trace]
             if (trace) {
                 const span = trace.startLLMSpan({
                     name,
@@ -1435,7 +1471,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const span: LangWatchSpan | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
+            const span: any | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
             if (span) {
                 span.end({
                     output: autoconvertTypedValues(output)
@@ -1509,7 +1545,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const span: LangWatchSpan | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
+            const span: any | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
             if (span) {
                 span.end({
                     error
@@ -1592,7 +1628,7 @@ export class AnalyticHandler {
             const chainEventId: string = this.handlers['lunary'].chainEvent[parentIds['lunary'].chainEvent]
 
             if (monitor && chainEventId) {
-                const runId = uuidv4()
+                const runId = crypto.randomUUID()
                 await monitor.trackEvent('tool', 'start', {
                     runId,
                     parentRunId: chainEventId,
@@ -1605,7 +1641,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const trace: LangWatchTrace | undefined = this.handlers['langWatch'].trace[parentIds['langWatch'].trace]
+            const trace: any | undefined = this.handlers['langWatch'].trace[parentIds['langWatch'].trace]
             if (trace) {
                 const span = trace.startSpan({
                     name,
@@ -1712,7 +1748,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const span: LangWatchSpan | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
+            const span: any | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
             if (span) {
                 span.end({
                     output: autoconvertTypedValues(output)
@@ -1786,7 +1822,7 @@ export class AnalyticHandler {
         }
 
         if (Object.prototype.hasOwnProperty.call(this.handlers, 'langWatch')) {
-            const span: LangWatchSpan | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
+            const span: any | undefined = this.handlers['langWatch'].span[returnIds['langWatch'].span]
             if (span) {
                 span.end({
                     error

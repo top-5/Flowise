@@ -41,6 +41,10 @@
 ## secrets
 **/*.key
 **/api.json
+.secret
+.secret.*
+**/.secret
+**/.secret.*
 
 ## uploads
 **/uploads

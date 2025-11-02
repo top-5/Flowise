@@ -1,7 +1,7 @@
 import { VectorStore } from '@langchain/core/vectorstores'
 import { BaseLanguageModel } from '@langchain/core/language_models/base'
 import { PromptTemplate } from '@langchain/core/prompts'
-import { HydeRetriever, HydeRetrieverOptions, PromptKey } from 'langchain/retrievers/hyde'
+import { HydeRetriever, HydeRetrieverOptions, PromptKey } from '@langchain/classic/retrievers/hyde'
 import { handleEscapeCharacters } from '../../../src/utils'
 import { INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
 

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { v4 as uuidv4 } from 'uuid'
+import * as crypto from 'crypto'
 import { ICommonObject } from '../src'
 
 import { getModelConfigByModelName, MODEL_TYPE } from '../src/modelLoader'
@@ -38,14 +38,15 @@ export class EvaluationRunner {
                     let providerName = ''
                     for (let i = 0; i < val.length; i++) {
                         const metric = val[i]
-                        if (typeof metric === 'object') {
-                            modelName = metric['model']
-                            providerName = metric['provider']
-                        } else {
-                            modelName = JSON.parse(metric)['model']
-                            providerName = JSON.parse(metric)['provider']
+                        if (!metric) continue
+                        if (typeof metric === 'object' && metric !== null) {
+                            modelName = (metric as any)['model'] || ''
+                            providerName = (metric as any)['provider'] || ''
+                        } else if (typeof metric === 'string') {
+                            const parsed = JSON.parse(metric)
+                            modelName = parsed?.['model'] || ''
+                            providerName = parsed?.['provider'] || ''
                         }
-
                         if (modelName) {
                             selectedModel = modelName
                         }
@@ -111,7 +112,7 @@ export class EvaluationRunner {
     async evaluateChatflow(chatflowId: string, apiKey: string, data: any, returnData: any) {
         for (let i = 0; i < data.dataset.rows.length; i++) {
             const item = data.dataset.rows[i]
-            const uuid = uuidv4()
+            const uuid = crypto.randomUUID()
 
             const headers: any = {
                 'X-Request-ID': uuid,
@@ -199,8 +200,8 @@ export class EvaluationRunner {
                 runData.error = error?.response?.data?.message
                     ? error.response.data.message
                     : error?.message
-                    ? error.message
-                    : 'Unknown error'
+                      ? error.message
+                      : 'Unknown error'
                 try {
                     if (runData.error.indexOf('-') > -1) {
                         // if there is a dash, remove all content before

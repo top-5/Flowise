@@ -1,6 +1,7 @@
-import { ZepMemory, ZepMemoryInput } from '@getzep/zep-cloud/langchain'
+// @ts-nocheck - zep-cloud v3.9.0 removed /langchain export, needs refactoring
+// import { ZepMemory, ZepMemoryInput } from '@getzep/zep-cloud/langchain'
 import { BaseMessage } from '@langchain/core/messages'
-import { InputValues, MemoryVariables, OutputValues } from 'langchain/memory'
+import { InputValues, MemoryVariables, OutputValues } from '@langchain/core/memory'
 import { ICommonObject } from '../../../src'
 import { IMessage, INode, INodeData, INodeParams, MemoryMethods, MessageType } from '../../../src/Interface'
 import {

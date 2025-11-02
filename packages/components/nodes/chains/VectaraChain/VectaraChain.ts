@@ -1,7 +1,8 @@
+// @ts-ignore - ESM module in CommonJS
 import fetch from 'node-fetch'
 import { Document } from '@langchain/core/documents'
 import { VectaraStore } from '@langchain/community/vectorstores/vectara'
-import { VectorDBQAChain } from 'langchain/chains'
+import { VectorDBQAChain } from '@langchain/classic/chains'
 import { INode, INodeData, INodeParams } from '../../../src/Interface'
 import { getBaseClasses } from '../../../src/utils'
 import { checkInputs, Moderation } from '../../moderation/Moderation'
@@ -320,8 +321,8 @@ class VectaraChain_Chains implements INode {
             }
 
             const result = await response.json()
-            const responses = result.responseSet[0].response
-            const documents = result.responseSet[0].document
+            const responses = (result as any).responseSet[0].response
+            const documents = (result as any).responseSet[0].document
             let rawSummarizedText = ''
 
             // remove responses that are not in the topK (in case of MMR)
@@ -349,7 +350,7 @@ class VectaraChain_Chains implements INode {
             }
 
             // Create the summarization response
-            const summaryStatus = result.responseSet[0].summary[0].status
+            const summaryStatus = (result as any).responseSet[0].summary[0].status
             if (summaryStatus.length > 0 && summaryStatus[0].code === 'BAD_REQUEST') {
                 throw new Error(
                     `BAD REQUEST: Too much text for the summarizer to summarize. Please try reducing the number of search results to summarize, or the context of each result by adjusting the 'summary_num_sentences', and 'summary_num_results' parameters respectively.`
@@ -364,7 +365,7 @@ class VectaraChain_Chains implements INode {
             }
 
             // Reorder citations in summary and create the list of returned source documents
-            rawSummarizedText = result.responseSet[0].summary[0]?.text
+            rawSummarizedText = (result as any).responseSet[0].summary[0]?.text
             let summarizedText = reorderCitations(rawSummarizedText)
             let summaryResponses = applyCitationOrder(responses, rawSummarizedText)
 

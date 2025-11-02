@@ -19,7 +19,25 @@ export interface CheckpointTuple {
     parentConfig?: RunnableConfig
 }
 
-export interface SerializerProtocol<D> {
-    stringify(obj: D): string
-    parse(data: string): Promise<D>
+// Simple JSON serializer that implements LangGraph v1.0 SerializerProtocol
+// with correct dumpsTyped/loadsTyped API
+export class JsonSerializer {
+    async dumpsTyped(obj: any): Promise<[string, Uint8Array]> {
+        const jsonStr = JSON.stringify(obj)
+        return ['json', new TextEncoder().encode(jsonStr)]
+    }
+
+    async loadsTyped(_type: string, data: Uint8Array | string): Promise<any> {
+        const str = typeof data === 'string' ? data : new TextDecoder().decode(data)
+        return JSON.parse(str)
+    }
+
+    // Convenience synchronous methods for internal use
+    stringify(obj: any): string {
+        return JSON.stringify(obj)
+    }
+
+    async parse(data: string): Promise<any> {
+        return JSON.parse(data)
+    }
 }

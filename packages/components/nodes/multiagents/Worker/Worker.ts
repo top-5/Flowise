@@ -3,10 +3,14 @@ import { RunnableSequence, RunnablePassthrough, RunnableConfig } from '@langchai
 import { ChatPromptTemplate, MessagesPlaceholder, HumanMessagePromptTemplate } from '@langchain/core/prompts'
 import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { HumanMessage } from '@langchain/core/messages'
-import { formatToOpenAIToolMessages } from 'langchain/agents/format_scratchpad/openai_tools'
-import { type ToolsAgentStep } from 'langchain/agents/openai/output_parser'
 import { INode, INodeData, INodeParams, IMultiAgentNode, ITeamState, ICommonObject, MessageContentImageUrl } from '../../../src/Interface'
-import { ToolCallingAgentOutputParser, AgentExecutor } from '../../../src/agents'
+import {
+    ToolCallingAgentOutputParser,
+    formatToOpenAIToolMessages,
+    ToolsAgentStep,
+    formatLogToMessage,
+    AgentExecutor
+} from '../../../src/agents'
 import { StringOutputParser } from '@langchain/core/output_parsers'
 import { getInputVariables, handleEscapeCharacters } from '../../../src/utils'
 

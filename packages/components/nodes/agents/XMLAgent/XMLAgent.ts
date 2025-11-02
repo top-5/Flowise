@@ -5,7 +5,7 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { RunnableSequence } from '@langchain/core/runnables'
 import { Tool } from '@langchain/core/tools'
 import { ChatPromptTemplate, HumanMessagePromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts'
-import { formatLogToMessage } from 'langchain/agents/format_scratchpad/log_to_message'
+import { formatXml } from '@langchain/classic/agents/format_scratchpad/xml'
 import { getBaseClasses, transformBracesWithColon } from '../../../src/utils'
 import {
     FlowiseMemory,
@@ -246,7 +246,7 @@ const prepareAgent = async (
         throw new Error(`Provided prompt is missing required input variables: ${JSON.stringify(missingVariables)}`)
     }
 
-    const llmWithStop = model.bind({ stop: ['</tool_input>', '</final_answer>'] })
+    const llmWithStop = model.withConfig({ stop: ['</tool_input>', '</final_answer>'] })
 
     const messages = (await memory.getChatMessages(flowObj.sessionId, false, prependMessages)) as IMessage[]
     let chatHistoryMsgTxt = ''
@@ -261,7 +261,7 @@ const prepareAgent = async (
     const runnableAgent = RunnableSequence.from([
         {
             [inputKey]: (i: { input: string; tools: Tool[]; steps: AgentStep[] }) => i.input,
-            agent_scratchpad: (i: { input: string; tools: Tool[]; steps: AgentStep[] }) => formatLogToMessage(i.steps),
+            agent_scratchpad: (i: { input: string; tools: Tool[]; steps: AgentStep[] }) => formatXml(i.steps),
             tools: (_: { input: string; tools: Tool[]; steps: AgentStep[] }) =>
                 tools.map((tool: Tool) => `${tool.name}: ${tool.description}`),
             [memoryKey]: (_: { input: string; tools: Tool[]; steps: AgentStep[] }) => chatHistoryMsgTxt

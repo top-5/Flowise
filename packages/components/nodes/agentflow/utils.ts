@@ -340,7 +340,7 @@ export const getPastChatHistoryImageMessages = async (
                             }
                         })
                     } else if (upload.type === 'stored-file:full') {
-                        const fileLoaderNodeModule = await import('../../nodes/documentloaders/File/File')
+                        const fileLoaderNodeModule = await import('../../nodes/documentloaders/File/File.js')
                         // @ts-ignore
                         const fileLoaderNodeInstance = new fileLoaderNodeModule.nodeClass()
                         const nodeOptions = {

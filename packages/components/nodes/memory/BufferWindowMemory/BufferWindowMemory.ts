@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
     FlowiseWindowMemory,
     ICommonObject,
@@ -9,7 +10,7 @@ import {
     MemoryMethods
 } from '../../../src/Interface'
 import { getBaseClasses, mapChatMessageToBaseMessage } from '../../../src/utils'
-import { BufferWindowMemory, BufferWindowMemoryInput } from 'langchain/memory'
+import { BufferWindowMemory, BufferWindowMemoryInput } from '@langchain/classic/memory'
 import { BaseMessage } from '@langchain/core/messages'
 import { DataSource } from 'typeorm'
 

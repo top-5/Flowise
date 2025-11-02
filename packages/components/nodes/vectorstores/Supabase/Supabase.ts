@@ -1,5 +1,5 @@
 import { flatten } from 'lodash'
-import { v4 as uuidv4 } from 'uuid'
+import * as crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import { Document } from '@langchain/core/documents'
 import { Embeddings } from '@langchain/core/embeddings'
@@ -274,7 +274,7 @@ class SupabaseUpsertVectorStore extends SupabaseVectorStore {
                         if (options?.ids) {
                             return { id: options.ids[i + y], ...row }
                         }
-                        return { id: uuidv4(), ...row }
+                        return { id: crypto.randomUUID(), ...row }
                     })
                     res = await this.client.from(this.tableName).upsert(chunk).select()
 

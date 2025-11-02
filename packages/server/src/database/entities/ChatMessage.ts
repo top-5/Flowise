@@ -8,7 +8,7 @@ export class ChatMessage implements IChatMessage {
     @PrimaryGeneratedColumn('uuid')
     id: string
 
-    @Column()
+    @Column({ type: 'varchar' })
     role: MessageType
 
     @Index()

@@ -1,7 +1,7 @@
 import { BaseRetriever } from '@langchain/core/retrievers'
 import { Embeddings } from '@langchain/core/embeddings'
-import { ContextualCompressionRetriever } from 'langchain/retrievers/contextual_compression'
-import { EmbeddingsFilter } from 'langchain/retrievers/document_compressors/embeddings_filter'
+import { ContextualCompressionRetriever } from '@langchain/classic/retrievers/contextual_compression'
+import { EmbeddingsFilter } from '@langchain/classic/retrievers/document_compressors/embeddings_filter'
 import { handleEscapeCharacters } from '../../../src/utils'
 import { INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
 

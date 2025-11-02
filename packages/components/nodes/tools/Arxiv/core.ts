@@ -1,5 +1,6 @@
-import { z } from 'zod'
+// @ts-ignore - ESM module in CommonJS
 import fetch from 'node-fetch'
+import { z } from 'zod'
 import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf'
 import { DynamicStructuredTool } from '../OpenAPIToolkit/core'
 
@@ -177,7 +178,7 @@ export class ArxivTool extends DynamicStructuredTool {
 
         // Get PDF buffer and create blob
         const buffer = await response.buffer()
-        const blob = new Blob([buffer])
+        const blob = new Blob([new Uint8Array(buffer)])
 
         // Use PDFLoader to extract text (same as Pdf.ts)
         const loader = new PDFLoader(blob, {

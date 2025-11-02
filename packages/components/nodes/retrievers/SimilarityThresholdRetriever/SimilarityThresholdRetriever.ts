@@ -1,6 +1,6 @@
 import { VectorStore } from '@langchain/core/vectorstores'
-import { ScoreThresholdRetriever } from 'langchain/retrievers/score_threshold'
-import { INode, INodeData, INodeParams, INodeOutputsValue } from '../../../src/Interface'
+import { ScoreThresholdRetriever } from '@langchain/classic/retrievers/score_threshold'
+import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams } from '../../../src/Interface'
 import { handleEscapeCharacters } from '../../../src'
 
 class SimilarityThresholdRetriever_Retrievers implements INode {

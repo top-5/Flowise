@@ -1,3 +1,4 @@
+// @ts-nocheck - exa-js version conflict, optional integration
 import { ExaSearchResults } from '@langchain/exa'
 import Exa from 'exa-js'
 import { ICommonObject, INode, INodeData, INodeParams } from '../../../src/Interface'

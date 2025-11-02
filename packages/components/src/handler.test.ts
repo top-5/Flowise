@@ -1,8 +1,9 @@
+import { vi } from 'vitest'
 import { getPhoenixTracer } from './handler'
 
-jest.mock('@opentelemetry/exporter-trace-otlp-proto', () => {
+vi.mock('@opentelemetry/exporter-trace-otlp-proto', () => {
     return {
-        ProtoOTLPTraceExporter: jest.fn().mockImplementation((args) => {
+        OTLPTraceExporter: vi.fn().mockImplementation((args) => {
             return { args }
         })
     }
@@ -22,7 +23,7 @@ describe('URL Handling For Phoenix Tracer', () => {
     })
 
     beforeEach(() => {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
     })
 
     const cases: [string, string][] = [

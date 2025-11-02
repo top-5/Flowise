@@ -1,6 +1,6 @@
-import { TextSplitter } from 'langchain/text_splitter'
+import { TextSplitter } from '@langchain/textsplitters'
 import { omit } from 'lodash'
-import { CheerioWebBaseLoader, WebBaseLoaderParams } from '@langchain/community/document_loaders/web/cheerio'
+import { CheerioWebBaseLoader } from '@langchain/community/document_loaders/web/cheerio'
 import { test } from 'linkifyjs'
 import { parse } from 'css-what'
 import { SelectorType } from 'cheerio'
@@ -140,7 +140,7 @@ class Cheerio_DocumentLoaders implements INode {
 
         const selector: SelectorType = nodeData.inputs?.selector as SelectorType
 
-        let params: WebBaseLoaderParams = {}
+        let params: Record<string, any> = {}
         if (selector) {
             parse(selector) // comes with cheerio - will throw error if invalid
             params['selector'] = selector
@@ -181,8 +181,8 @@ class Cheerio_DocumentLoaders implements INode {
                 selectedLinks && selectedLinks.length > 0
                     ? selectedLinks.slice(0, limit === 0 ? undefined : limit)
                     : relativeLinksMethod === 'webCrawl'
-                    ? await webCrawl(url, limit)
-                    : await xmlScrape(url, limit)
+                      ? await webCrawl(url, limit)
+                      : await xmlScrape(url, limit)
             if (process.env.DEBUG === 'true')
                 options.logger.info(`[${orgId}]: CheerioWebBaseLoader pages: ${JSON.stringify(pages)}, length: ${pages.length}`)
             if (!pages || pages.length === 0) throw new Error('No relative links found')

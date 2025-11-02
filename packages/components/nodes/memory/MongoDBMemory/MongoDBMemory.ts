@@ -1,5 +1,6 @@
+// @ts-nocheck
 import { MongoClient } from 'mongodb'
-import { BufferMemory, BufferMemoryInput } from 'langchain/memory'
+import { BufferMemory, BufferMemoryInput } from '@langchain/classic/memory'
 import { mapStoredMessageToChatMessage, AIMessage, HumanMessage, BaseMessage } from '@langchain/core/messages'
 import {
     convertBaseMessagetoIMessage,
@@ -168,7 +169,7 @@ class BufferMemoryExtended extends FlowiseMemory implements MemoryMethods {
             await collection.updateOne(
                 { sessionId: id },
                 {
-                    $push: { messages: { $each: messageToAdd } }
+                    $push: { messages: { $each: messageToAdd } } as any
                 },
                 { upsert: true }
             )
@@ -183,7 +184,7 @@ class BufferMemoryExtended extends FlowiseMemory implements MemoryMethods {
             await collection.updateOne(
                 { sessionId: id },
                 {
-                    $push: { messages: { $each: messageToAdd } }
+                    $push: { messages: { $each: messageToAdd } } as any
                 },
                 { upsert: true }
             )

@@ -630,24 +630,24 @@ export class SecureZodSchemaParser {
         for (const modifier of modifiers) {
             switch (modifier.name) {
                 case 'int':
-                    if (zodType._def?.typeName === 'ZodNumber') {
+                    if ((zodType._def as any)?.typeName === 'ZodNumber') {
                         zodType = (zodType as z.ZodNumber).int()
                     }
                     break
                 case 'max':
                     if (modifier.args[0] !== undefined) {
-                        if (zodType._def?.typeName === 'ZodString') {
+                        if ((zodType._def as any)?.typeName === 'ZodString') {
                             zodType = (zodType as z.ZodString).max(modifier.args[0])
-                        } else if (zodType._def?.typeName === 'ZodArray') {
+                        } else if ((zodType._def as any)?.typeName === 'ZodArray') {
                             zodType = (zodType as z.ZodArray<any>).max(modifier.args[0])
                         }
                     }
                     break
                 case 'min':
                     if (modifier.args[0] !== undefined) {
-                        if (zodType._def?.typeName === 'ZodString') {
+                        if ((zodType._def as any)?.typeName === 'ZodString') {
                             zodType = (zodType as z.ZodString).min(modifier.args[0])
-                        } else if (zodType._def?.typeName === 'ZodArray') {
+                        } else if ((zodType._def as any)?.typeName === 'ZodArray') {
                             zodType = (zodType as z.ZodArray<any>).min(modifier.args[0])
                         }
                     }

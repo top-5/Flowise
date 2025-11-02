@@ -1,6 +1,6 @@
 import { Browser, Page, PuppeteerWebBaseLoader, PuppeteerWebBaseLoaderOptions } from '@langchain/community/document_loaders/web/puppeteer'
 import { Document } from '@langchain/core/documents'
-import { TextSplitter } from 'langchain/text_splitter'
+import { TextSplitter } from '@langchain/textsplitters'
 import { test } from 'linkifyjs'
 import { omit } from 'lodash'
 import { PuppeteerLifeCycleEvent } from 'puppeteer'
@@ -236,8 +236,8 @@ class Puppeteer_DocumentLoaders implements INode {
                 selectedLinks && selectedLinks.length > 0
                     ? selectedLinks.slice(0, limit === 0 ? undefined : limit)
                     : relativeLinksMethod === 'webCrawl'
-                    ? await webCrawl(url, limit)
-                    : await xmlScrape(url, limit)
+                      ? await webCrawl(url, limit)
+                      : await xmlScrape(url, limit)
             if (process.env.DEBUG === 'true')
                 options.logger.info(`[${orgId}]: PuppeteerWebBaseLoader pages: ${JSON.stringify(pages)}, length: ${pages.length}`)
             if (!pages || pages.length === 0) throw new Error('No relative links found')

@@ -19,7 +19,7 @@ export class ChatMessageFeedback implements IChatMessageFeedback {
     @Column({ type: 'uuid' })
     messageId: string
 
-    @Column({ nullable: true })
+    @Column({ nullable: true, type: 'varchar' })
     rating: ChatMessageRatingType
 
     @Column({ nullable: true, type: 'text' })

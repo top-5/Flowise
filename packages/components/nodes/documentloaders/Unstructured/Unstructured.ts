@@ -4,8 +4,8 @@ import {
     UnstructuredLoaderOptions,
     UnstructuredLoaderStrategy
 } from '@langchain/community/document_loaders/fs/unstructured'
-import { BaseDocumentLoader } from 'langchain/document_loaders/base'
-import { StringWithAutocomplete } from 'langchain/dist/util/types'
+import { BaseDocumentLoader } from '@langchain/core/document_loaders/base'
+import { StringWithAutocomplete } from '@langchain/core/utils/types'
 import { Document } from '@langchain/core/documents'
 
 /**
@@ -85,7 +85,7 @@ export class UnstructuredLoader extends BaseDocumentLoader {
 
     async _partition(buffer: Buffer, fileName: string): Promise<Element[]> {
         const formData = new FormData()
-        formData.append('files', new Blob([buffer]), fileName)
+        formData.append('files', new Blob([buffer as any]), fileName)
         formData.append('strategy', this.strategy)
         this.ocrLanguages.forEach((language) => {
             formData.append('ocr_languages', language)
