@@ -119,11 +119,11 @@ class RRFRetriever_Retrievers implements INode {
         })
 
         if (output === 'retriever') return retriever
-        else if (output === 'document') return await retriever.getRelevantDocuments(query ? query : input)
+        else if (output === 'document') return await retriever._getRelevantDocuments(query ? query : input)
         else if (output === 'text') {
             let finaltext = ''
 
-            const docs = await retriever.getRelevantDocuments(query ? query : input)
+            const docs = await retriever._getRelevantDocuments(query ? query : input)
 
             for (const doc of docs) finaltext += `${doc.pageContent}\n`
 

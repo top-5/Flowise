@@ -764,7 +764,10 @@ export const formatAgentSteps = (steps: AgentStep[]): BaseMessage[] =>
             } else {
                 content = observation
             }
-            return new FunctionMessage(content, action.tool)
+            return new FunctionMessage({
+                content,
+                name: action.tool
+            })
         }
         if ('messageLog' in action && action.messageLog !== undefined) {
             const log = action.messageLog as BaseMessage[]
@@ -1010,7 +1013,11 @@ export class ToolCallingAgentOutputParser extends AgentMultiActionOutputParser {
 
     async parseResult(generations: ChatGeneration[]) {
         if ('message' in generations[0] && isBaseMessage(generations[0].message)) {
-            return parseAIMessageToToolAction(generations[0].message)
+            const message = generations[0].message
+            if (message.type !== 'ai') {
+                throw new Error(`parseResult expects an AIMessage but got ${message.type}`)
+            }
+            return parseAIMessageToToolAction(message as AIMessage)
         }
         throw new Error('parseResult on ToolCallingAgentOutputParser only works on ChatGeneration output')
     }

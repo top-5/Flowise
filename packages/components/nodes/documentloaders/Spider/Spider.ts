@@ -241,7 +241,8 @@ class Spider_DocumentLoaders implements INode {
         let docs = []
 
         if (textSplitter) {
-            docs = await loader.loadAndSplit(textSplitter)
+            const loadedDocs = await loader.load()
+            docs = await textSplitter.splitDocuments(loadedDocs)
         } else {
             docs = await loader.load()
         }

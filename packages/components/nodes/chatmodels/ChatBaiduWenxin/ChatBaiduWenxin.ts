@@ -78,7 +78,7 @@ class ChatBaiduWenxin_ChatModels implements INode {
             modelName,
             temperature: temperature ? parseFloat(temperature) : undefined
         }
-        if (cache) obj.cache = cache
+        if (cache) (obj as any).cache = cache
 
         const model = new ChatBaiduQianfan(obj)
         return model

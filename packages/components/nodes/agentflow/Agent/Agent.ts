@@ -1281,7 +1281,8 @@ class Agent_Agentflow implements INode {
             return builtInUsedTools
         }
 
-        const { output, tools, groundingMetadata, urlContextMetadata } = response.response_metadata
+        const metadata = response.response_metadata as any
+        const { output, tools, groundingMetadata, urlContextMetadata } = metadata
 
         // Handle OpenAI built-in tools
         if (output && Array.isArray(output) && output.length > 0 && tools && Array.isArray(tools) && tools.length > 0) {
@@ -1623,9 +1624,10 @@ class Agent_Agentflow implements INode {
 
         // Include token usage metadata with accumulated tokens from tool calls
         if (response.usage_metadata) {
-            const originalTokens = response.usage_metadata.total_tokens || 0
+            const usageMetadata = response.usage_metadata as any
+            const originalTokens = usageMetadata.total_tokens || 0
             output.usageMetadata = {
-                ...response.usage_metadata,
+                ...usageMetadata,
                 total_tokens: originalTokens + additionalTokens,
                 tool_call_tokens: additionalTokens
             }
@@ -1729,7 +1731,8 @@ class Agent_Agentflow implements INode {
         isWaitingForHumanInput?: boolean
     }> {
         // Track total tokens used throughout this process
-        let totalTokens = response.usage_metadata?.total_tokens || 0
+        const usageMetadata = response.usage_metadata as any
+        let totalTokens = usageMetadata?.total_tokens || 0
         const usedTools: IUsedTool[] = []
         let sourceDocuments: Array<any> = []
         let artifacts: any[] = []
@@ -1949,8 +1952,11 @@ class Agent_Agentflow implements INode {
         }
 
         // Add tokens from this response
-        if (newResponse.usage_metadata?.total_tokens) {
-            totalTokens += newResponse.usage_metadata.total_tokens
+        if (newResponse.usage_metadata) {
+            const newUsageMetadata = newResponse.usage_metadata as any
+            if (newUsageMetadata.total_tokens) {
+                totalTokens += newUsageMetadata.total_tokens
+            }
         }
 
         // Check for recursive tool calls and handle them
@@ -2047,7 +2053,8 @@ class Agent_Agentflow implements INode {
         messages.push(...lastCheckpointMessages.slice(0, lastCheckpointMessages.length - 1))
 
         // Track total tokens used throughout this process
-        let totalTokens = response.usage_metadata?.total_tokens || 0
+        const usageMetadataStream = response.usage_metadata as any
+        let totalTokens = usageMetadataStream?.total_tokens || 0
 
         if (!response.tool_calls || response.tool_calls.length === 0) {
             return { response, usedTools: [], sourceDocuments: [], artifacts: [], totalTokens }
@@ -2268,8 +2275,11 @@ class Agent_Agentflow implements INode {
         }
 
         // Add tokens from this response
-        if (newResponse.usage_metadata?.total_tokens) {
-            totalTokens += newResponse.usage_metadata.total_tokens
+        if (newResponse.usage_metadata) {
+            const newUsageMetadataStream = newResponse.usage_metadata as any
+            if (newUsageMetadataStream.total_tokens) {
+                totalTokens += newUsageMetadataStream.total_tokens
+            }
         }
 
         // Check for recursive tool calls and handle them

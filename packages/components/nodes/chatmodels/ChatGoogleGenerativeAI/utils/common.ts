@@ -456,7 +456,7 @@ export function mapGenerateContentResultToChatResult(
     if (Array.isArray(candidateContent?.parts) && candidateContent.parts.length === 1 && candidateContent.parts[0].text) {
         content = candidateContent.parts[0].text
     } else if (Array.isArray(candidateContent?.parts) && candidateContent.parts.length > 0) {
-        content = candidateContent.parts.map((p) => {
+        content = candidateContent.parts.map((p: any) => {
             if ('text' in p) {
                 return {
                     type: 'text',
@@ -484,7 +484,7 @@ export function mapGenerateContentResultToChatResult(
     if (typeof content === 'string') {
         text = content
     } else if (Array.isArray(content) && content.length > 0) {
-        const block = content.find((b) => 'text' in b) as { text: string } | undefined
+        const block = content.find((b) => 'text' in b) as any
         text = block?.text ?? text
     }
 
@@ -537,7 +537,7 @@ export function convertResponseContentToChatGenerationChunk(
     if (Array.isArray(candidateContent?.parts) && candidateContent.parts.every((p) => 'text' in p)) {
         content = candidateContent.parts.map((p) => p.text).join('')
     } else if (Array.isArray(candidateContent?.parts)) {
-        content = candidateContent.parts.map((p) => {
+        content = candidateContent.parts.map((p: any) => {
             if ('text' in p) {
                 return {
                     type: 'text',
@@ -565,7 +565,7 @@ export function convertResponseContentToChatGenerationChunk(
     if (content && typeof content === 'string') {
         text = content
     } else if (Array.isArray(content)) {
-        const block = content.find((b) => 'text' in b) as { text: string } | undefined
+        const block = content.find((b) => 'text' in b) as any
         text = block?.text ?? ''
     }
 
