@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'path'
 import dotenv from 'dotenv'
+import { resolve } from 'path'
+import { defineConfig } from 'vite'
 
 export default defineConfig(async ({ mode }) => {
     let proxy = undefined
@@ -42,7 +42,7 @@ export default defineConfig(async ({ mode }) => {
             outDir: './build'
         },
         server: {
-            open: true,
+            open: false,
             proxy,
             port: process.env.VITE_PORT ?? 8080,
             host: process.env.VITE_HOST

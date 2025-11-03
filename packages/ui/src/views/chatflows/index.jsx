@@ -6,16 +6,16 @@ import { Box, Skeleton, Stack, ToggleButton, ToggleButtonGroup } from '@mui/mate
 import { useTheme } from '@mui/material/styles'
 
 // project imports
-import MainCard from '@/ui-component/cards/MainCard'
-import ItemCard from '@/ui-component/cards/ItemCard'
-import { gridSpacing } from '@/store/constant'
 import WorkflowEmptySVG from '@/assets/images/workflow_empty.svg'
-import ConfirmDialog from '@/ui-component/dialog/ConfirmDialog'
-import { FlowListTable } from '@/ui-component/table/FlowListTable'
-import { StyledPermissionButton } from '@/ui-component/button/RBACButtons'
-import ViewHeader from '@/layout/MainLayout/ViewHeader'
 import ErrorBoundary from '@/ErrorBoundary'
+import ViewHeader from '@/layout/MainLayout/ViewHeader'
+import { gridSpacing } from '@/store/constant'
+import { StyledPermissionButton } from '@/ui-component/button/RBACButtons'
+import ItemCard from '@/ui-component/cards/ItemCard'
+import MainCard from '@/ui-component/cards/MainCard'
+import ConfirmDialog from '@/ui-component/dialog/ConfirmDialog'
 import TablePagination, { DEFAULT_ITEMS_PER_PAGE } from '@/ui-component/pagination/TablePagination'
+import { FlowListTable } from '@/ui-component/table/FlowListTable'
 
 // API
 import chatflowsApi from '@/api/chatflows'
@@ -28,7 +28,7 @@ import { baseURL } from '@/store/constant'
 import { useError } from '@/store/context/ErrorContext'
 
 // icons
-import { IconPlus, IconLayoutGrid, IconList } from '@tabler/icons-react'
+import { IconLayoutGrid, IconList, IconPlus } from '@tabler/icons-react'
 
 // ==============================|| CHATFLOWS ||============================== //
 
@@ -104,6 +104,12 @@ const Chatflows = () => {
                 const chatflows = getAllChatflowsApi.data?.data
                 const total = getAllChatflowsApi.data?.total
                 setTotal(total)
+                
+                if (!chatflows || !Array.isArray(chatflows)) {
+                    setImages({})
+                    return
+                }
+                
                 const images = {}
                 for (let i = 0; i < chatflows.length; i += 1) {
                     const flowDataStr = chatflows[i].flowData

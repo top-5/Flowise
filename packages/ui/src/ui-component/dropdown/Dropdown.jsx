@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useSelector } from 'react-redux'
 
-import { Popper, FormControl, TextField, Box, Typography } from '@mui/material'
+import { Box, FormControl, Popper, TextField, Typography } from '@mui/material'
 import Autocomplete, { autocompleteClasses } from '@mui/material/Autocomplete'
-import { useTheme, styled } from '@mui/material/styles'
+import { styled, useTheme } from '@mui/material/styles'
 import PropTypes from 'prop-types'
 
 const StyledPopper = styled(Popper)({
@@ -75,10 +75,12 @@ export const Dropdown = ({ name, value, loading, options, onSelect, disabled = f
                         />
                     )
                 }}
-                renderOption={(props, option) => (
-                    <Box component='li' {...props} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {option.imageSrc && (
-                            <img
+                renderOption={(props, option) => {
+                    const { key, ...otherProps } = props
+                    return (
+                        <Box component='li' key={key} {...otherProps} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {option.imageSrc && (
+                                <img
                                 src={option.imageSrc}
                                 alt={option.description}
                                 style={{
@@ -96,7 +98,8 @@ export const Dropdown = ({ name, value, loading, options, onSelect, disabled = f
                             )}
                         </div>
                     </Box>
-                )}
+                    )
+                }}
                 sx={{ height: '100%' }}
             />
         </FormControl>

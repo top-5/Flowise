@@ -1,8 +1,8 @@
-// @ts-nocheck - @langchain/community/vectorstores/redis module not found, optional integration
 import { flatten } from 'lodash'
 import { createClient, FtSearchOptions } from 'redis'
 import { Embeddings } from '@langchain/core/embeddings'
-import { RedisVectorStore, RedisVectorStoreConfig } from '@langchain/community/vectorstores/redis'
+import { RedisVectorStore } from '@langchain/redis'
+import type { RedisVectorStoreConfig } from '@langchain/redis'
 import { Document } from '@langchain/core/documents'
 import { ICommonObject, INode, INodeData, INodeOutputsValue, INodeParams, IndexingResult } from '../../../src/Interface'
 import { getBaseClasses, getCredentialData, getCredentialParam } from '../../../src/utils'
@@ -164,7 +164,7 @@ class Redis_VectorStores implements INode {
                 await redisClient.connect()
 
                 const storeConfig: RedisVectorStoreConfig = {
-                    redisClient: redisClient,
+                    redisClient: redisClient as any,
                     indexName: indexName
                 }
                 const isIndexExists = await checkIndexExists(redisClient, indexName)
@@ -240,7 +240,7 @@ class Redis_VectorStores implements INode {
         } as any)
 
         const storeConfig: RedisVectorStoreConfig = {
-            redisClient: redisClient,
+            redisClient: redisClient as any,
             indexName: indexName
         }
 

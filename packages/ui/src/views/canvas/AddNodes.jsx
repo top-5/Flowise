@@ -1,51 +1,51 @@
-import { useState, useRef, useEffect, memo } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
 import PropTypes from 'prop-types'
+import { memo, useEffect, useRef, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 
 // material-ui
-import { useTheme } from '@mui/material/styles'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import {
     Accordion,
-    AccordionSummary,
     AccordionDetails,
+    AccordionSummary,
     Box,
+    Chip,
     ClickAwayListener,
     Divider,
     InputAdornment,
     List,
-    ListItemButton,
     ListItem,
     ListItemAvatar,
+    ListItemButton,
     ListItemText,
     OutlinedInput,
     Paper,
     Popper,
     Stack,
-    Typography,
-    Chip,
     Tab,
-    Tabs
+    Tabs,
+    Typography
 } from '@mui/material'
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import { useTheme } from '@mui/material/styles'
 
 // third-party
 import PerfectScrollbar from 'react-perfect-scrollbar'
 
 // project imports
-import MainCard from '@/ui-component/cards/MainCard'
-import Transitions from '@/ui-component/extended/Transitions'
 import { StyledFab } from '@/ui-component/button/StyledFab'
+import MainCard from '@/ui-component/cards/MainCard'
 import AgentflowGeneratorDialog from '@/ui-component/dialog/AgentflowGeneratorDialog'
+import Transitions from '@/ui-component/extended/Transitions'
 
 // icons
-import { IconPlus, IconSearch, IconMinus, IconX, IconSparkles } from '@tabler/icons-react'
-import LlamaindexPNG from '@/assets/images/llamaindex.png'
 import LangChainPNG from '@/assets/images/langchain.png'
+import LlamaindexPNG from '@/assets/images/llamaindex.png'
 import utilNodesPNG from '@/assets/images/utilNodes.png'
+import { IconMinus, IconPlus, IconSearch, IconSparkles, IconX } from '@tabler/icons-react'
 
 // const
-import { baseURL, AGENTFLOW_ICONS } from '@/store/constant'
 import { SET_COMPONENT_NODES } from '@/store/actions'
+import { AGENTFLOW_ICONS, baseURL } from '@/store/constant'
 
 // ==============================|| ADD NODES||============================== //
 function a11yProps(index) {
@@ -103,6 +103,8 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
     }
 
     const addException = (category) => {
+        if (!nodesData || !Array.isArray(nodesData)) return []
+        
         let nodes = []
         if (category) {
             const nodeNames = exceptionsForAgentCanvas[category] || []
@@ -217,6 +219,8 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
     }
 
     const getSearchedNodes = (value) => {
+        if (!nodesData || !Array.isArray(nodesData)) return []
+        
         if (isAgentCanvas) {
             const nodes = nodesData.filter((nd) => !blacklistCategoriesForAgentCanvas.includes(nd.category))
             nodes.push(...addException())
@@ -260,6 +264,20 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
     }
 
     const groupByCategory = (nodes, newTabValue, isFilter) => {
+        console.log('[AddNodes] groupByCategory called', {
+            nodesCount: nodes?.length,
+            isAgentCanvas,
+            isAgentCanvasV2,
+            newTabValue,
+            isFilter
+        })
+        
+        if (!nodes || !Array.isArray(nodes)) {
+            console.log('[AddNodes] No nodes data or not an array')
+            setNodes({})
+            return
+        }
+        
         if (isAgentCanvas) {
             const accordianCategories = {}
             const result = nodes.reduce(function (r, a) {
@@ -269,17 +287,32 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
                 return r
             }, Object.create(null))
 
+            console.log('[AddNodes] Categories found:', Object.keys(result))
+
             const filteredResult = {}
             for (const category in result) {
+                console.log('[AddNodes] Processing category:', category, 'nodeCount:', result[category].length)
+                
+                // For v2, only show Agent Flows category
                 if (isAgentCanvasV2) {
                     if (category !== 'Agent Flows') {
+                        console.log('[AddNodes] Skipping category (not Agent Flows):', category)
                         continue
                     }
-                } else {
-                    if (category === 'Agent Flows') {
-                        continue
+                    // For Agent Flows in v2, include all nodes (don't filter by blacklist)
+                    const nodes = result[category].filter((nd) => !nd.tags || !nd.tags.includes('LlamaIndex'))
+                    console.log('[AddNodes] Agent Flows nodes after LlamaIndex filter:', nodes.length)
+                    if (nodes.length > 0) {
+                        filteredResult[category] = nodes
                     }
+                    continue
                 }
+                
+                // For non-v2, exclude Agent Flows
+                if (category === 'Agent Flows') {
+                    continue
+                }
+                
                 // Filter out blacklisted categories
                 if (!blacklistCategoriesForAgentCanvas.includes(category)) {
                     // Filter out LlamaIndex nodes
@@ -294,11 +327,15 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
                     filteredResult[category] = addException(category)
                 }
             }
+            console.log('[AddNodes] Final filteredResult categories:', Object.keys(filteredResult))
+            console.log('[AddNodes] filteredResult:', filteredResult)
+            console.log('[AddNodes] Agent Flows nodes:', filteredResult['Agent Flows'])
             setNodes(filteredResult)
             accordianCategories['Multi Agents'] = true
             accordianCategories['Sequential Agents'] = true
             accordianCategories['Memory'] = true
             accordianCategories['Agent Flows'] = true
+            console.log('[AddNodes] accordianCategories:', accordianCategories)
             setCategoryExpanded(accordianCategories)
         } else {
             const taggedNodes = groupByTags(nodes, newTabValue)
@@ -379,6 +416,12 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
     }, [node])
 
     useEffect(() => {
+        console.log('[AddNodes] nodesData changed:', {
+            hasData: !!nodesData,
+            count: nodesData?.length,
+            isAgentCanvas
+        })
+        
         if (nodesData) {
             groupByCategory(nodesData)
             dispatch({ type: SET_COMPONENT_NODES, componentNodes: nodesData })
@@ -405,6 +448,8 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
         setOpenDialog(false)
         onFlowGenerated()
     }
+
+    console.log('[AddNodes] Rendering with nodes state:', Object.keys(nodes), 'open:', open)
 
     return (
         <>
@@ -452,7 +497,6 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
                 anchorEl={anchorRef.current}
                 role={undefined}
                 transition
-                disablePortal
                 popperOptions={{
                     modifiers: [
                         {
@@ -465,9 +509,14 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
                 }}
                 sx={{ zIndex: 1000 }}
             >
-                {({ TransitionProps }) => (
-                    <Transitions in={open} {...TransitionProps}>
-                        <Paper>
+                {({ TransitionProps }) => {
+                    console.log('[AddNodes] Popper render function called with TransitionProps:', TransitionProps)
+                    console.log('[AddNodes] open state:', open)
+                    console.log('[AddNodes] anchorRef.current:', anchorRef.current)
+                    console.log('[AddNodes] TransitionProps.in:', TransitionProps?.in)
+                    return (
+                        <Transitions type="grow" in={open} {...TransitionProps}>
+                            <Paper>
                             <ClickAwayListener onClickAway={handleClose}>
                                 <MainCard border={false} elevation={16} content={false} boxShadow shadow={theme.shadows[16]}>
                                     <Box sx={{ p: 2 }}>
@@ -587,7 +636,9 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
                                             >
                                                 {Object.keys(nodes)
                                                     .sort()
-                                                    .map((category) => (
+                                                    .map((category) => {
+                                                        console.log('[AddNodes] Rendering category:', category, 'nodeCount:', nodes[category]?.length, 'expanded:', categoryExpanded[category])
+                                                        return (
                                                         <Accordion
                                                             expanded={categoryExpanded[category] || false}
                                                             onChange={handleAccordionChange(category)}
@@ -739,7 +790,8 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
                                                                 ))}
                                                             </AccordionDetails>
                                                         </Accordion>
-                                                    ))}
+                                                        )
+                                                    })}
                                             </List>
                                         </Box>
                                     </PerfectScrollbar>
@@ -747,7 +799,8 @@ const AddNodes = ({ nodesData, node, isAgentCanvas, isAgentflowv2, onFlowGenerat
                             </ClickAwayListener>
                         </Paper>
                     </Transitions>
-                )}
+                    )
+                }}
             </Popper>
         </>
     )

@@ -12,7 +12,9 @@ export class RedisEventSubscriber {
             this.redisSubscriber = createClient({
                 url: process.env.REDIS_URL,
                 socket: {
-                    keepAlive: process.env.REDIS_KEEP_ALIVE ? true : undefined
+                    keepAlive: process.env.REDIS_KEEP_ALIVE && !isNaN(parseInt(process.env.REDIS_KEEP_ALIVE, 10))
+                        ? parseInt(process.env.REDIS_KEEP_ALIVE, 10)
+                        : false
                 },
                 pingInterval:
                     process.env.REDIS_KEEP_ALIVE && !isNaN(parseInt(process.env.REDIS_KEEP_ALIVE, 10))

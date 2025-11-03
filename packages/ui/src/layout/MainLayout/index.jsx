@@ -3,14 +3,14 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Outlet } from 'react-router-dom'
 
 // material-ui
-import { styled, useTheme } from '@mui/material/styles'
 import { AppBar, Box, CssBaseline, Toolbar, useMediaQuery } from '@mui/material'
+import { styled, useTheme } from '@mui/material/styles'
 
 // project imports
+import { SET_MENU } from '@/store/actions'
+import { drawerWidth, headerHeight } from '@/store/constant'
 import Header from './Header'
 import Sidebar from './Sidebar'
-import { drawerWidth, headerHeight } from '@/store/constant'
-import { SET_MENU } from '@/store/actions'
 
 // styles
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })(({ theme, open }) => ({
@@ -95,7 +95,7 @@ const MainLayout = () => {
             <Sidebar drawerOpen={leftDrawerOpened} drawerToggle={handleLeftDrawerToggle} />
 
             {/* main content */}
-            <Main theme={theme} open={leftDrawerOpened}>
+            <Main open={leftDrawerOpened}>
                 <Outlet />
             </Main>
         </Box>

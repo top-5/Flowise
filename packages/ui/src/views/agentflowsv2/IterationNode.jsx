@@ -1,32 +1,32 @@
 import PropTypes from 'prop-types'
-import { useContext, memo, useRef, useState, useEffect, useCallback } from 'react'
+import { memo, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { Background, Handle, Position, useUpdateNodeInternals, NodeToolbar, NodeResizer } from 'reactflow'
+import { Background, Handle, NodeResizer, NodeToolbar, Position, useUpdateNodeInternals } from 'reactflow'
 
 // material-ui
-import { styled, useTheme, alpha, darken, lighten } from '@mui/material/styles'
-import { ButtonGroup, Avatar, Box, Typography, IconButton, Tooltip } from '@mui/material'
+import { Avatar, Box, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material'
+import { alpha, darken, lighten, styled, useTheme } from '@mui/material/styles'
 
 // project imports
-import MainCard from '@/ui-component/cards/MainCard'
 import { flowContext } from '@/store/context/ReactFlowContext'
+import MainCard from '@/ui-component/cards/MainCard'
 import NodeInfoDialog from '@/ui-component/dialog/NodeInfoDialog'
 
 // icons
+import CancelIcon from '@mui/icons-material/Cancel'
+import StopCircleIcon from '@mui/icons-material/StopCircle'
 import {
     IconCheck,
-    IconExclamationMark,
     IconCircleChevronRightFilled,
     IconCopy,
-    IconTrash,
+    IconExclamationMark,
     IconInfoCircle,
-    IconLoader
+    IconLoader,
+    IconTrash
 } from '@tabler/icons-react'
-import StopCircleIcon from '@mui/icons-material/StopCircle'
-import CancelIcon from '@mui/icons-material/Cancel'
 
 // const
-import { baseURL, AGENTFLOW_ICONS } from '@/store/constant'
+import { AGENTFLOW_ICONS, baseURL } from '@/store/constant'
 
 const CardWrapper = styled(MainCard)(({ theme }) => ({
     background: theme.palette.card.main,
@@ -91,12 +91,13 @@ const IterationNode = ({ data }) => {
     }
 
     const getOutputAnchors = () => {
-        return data.outputAnchors ?? []
+        return data?.outputAnchors ?? []
     }
 
     const getAnchorPosition = (index) => {
         const currentHeight = ref.current?.clientHeight || 0
-        const spacing = currentHeight / (getOutputAnchors().length + 1)
+        const outputAnchors = getOutputAnchors()
+        const spacing = currentHeight / (outputAnchors.length + 1)
         const position = spacing * (index + 1)
 
         // Update node internals when we get a non-zero position
@@ -108,7 +109,8 @@ const IterationNode = ({ data }) => {
     }
 
     const getMinimumHeight = () => {
-        const outputCount = getOutputAnchors().length
+        const outputAnchors = getOutputAnchors()
+        const outputCount = outputAnchors?.length ?? 0
         // Use exactly 60px as minimum height
         return Math.max(60, outputCount * 20 + 40)
     }

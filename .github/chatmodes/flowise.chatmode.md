@@ -1,6 +1,6 @@
 ---
 description: 'Flowise AI Platform Development - Expert assistant for building and maintaining the Flowise low-code AI orchestration platform'
-tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'Azure MCP/search', 'perplexity/*', 'azure/azure-mcp/search', 'github/*', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos']
+tools: ['edit', 'runNotebooks', 'search', 'new', 'runCommands', 'runTasks', 'Azure MCP/search', 'playwright-mcp/*', 'perplexity/*', 'azure/azure-mcp/search', 'Azure MCP/search', 'Azure MCP/search', 'usages', 'vscodeAPI', 'problems', 'changes', 'testFailure', 'openSimpleBrowser', 'fetch', 'githubRepo', 'extensions', 'todos', 'runTests']
 ---
 
 # Flowise Development Assistant
