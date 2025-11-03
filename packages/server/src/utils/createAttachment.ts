@@ -1,23 +1,24 @@
 import { Request } from 'express'
-import * as path from 'path'
 import {
     addArrayFilesToStorage,
     getFileFromUpload,
     IDocument,
+    isPathTraversal,
+    isValidUUID,
     mapExtToInputField,
     mapMimeTypeToInputField,
-    removeSpecificFileFromUpload,
-    isValidUUID,
-    isPathTraversal
+    removeSpecificFileFromUpload
 } from 'flowise-components'
-import { getRunningExpressApp } from './getRunningExpressApp'
-import { getErrorMessage } from '../errors/utils'
-import { checkStorage, updateStorageUsage } from './quotaUsage'
-import { ChatFlow } from '../database/entities/ChatFlow'
-import { Workspace } from '../enterprise/database/entities/workspace.entity'
-import { Organization } from '../enterprise/database/entities/organization.entity'
-import { InternalFlowiseError } from '../errors/internalFlowiseError'
 import { StatusCodes } from 'http-status-codes'
+import * as path from 'path'
+import { pathToFileURL } from 'url'
+import { ChatFlow } from '../database/entities/ChatFlow'
+import { Organization } from '../enterprise/database/entities/organization.entity'
+import { Workspace } from '../enterprise/database/entities/workspace.entity'
+import { InternalFlowiseError } from '../errors/internalFlowiseError'
+import { getErrorMessage } from '../errors/utils'
+import { getRunningExpressApp } from './getRunningExpressApp'
+import { checkStorage, updateStorageUsage } from './quotaUsage'
 
 /**
  * Create attachment
@@ -112,7 +113,7 @@ export const createFileAttachment = async (req: Request) => {
     // Find FileLoader node
     const fileLoaderComponent = appServer.nodesPool.componentNodes['fileLoader']
     const fileLoaderNodeInstanceFilePath = fileLoaderComponent.filePath as string
-    const fileLoaderNodeModule = await import(fileLoaderNodeInstanceFilePath)
+    const fileLoaderNodeModule = await import(pathToFileURL(fileLoaderNodeInstanceFilePath).href)
     const fileLoaderNodeInstance = new fileLoaderNodeModule.nodeClass()
     const options = {
         retrieveAttachmentChatId: true,

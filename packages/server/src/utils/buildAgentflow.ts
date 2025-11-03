@@ -1,65 +1,66 @@
 // @ts-nocheck
-import { DataSource } from 'typeorm'
-import { v4 as uuidv4 } from 'uuid'
-import { cloneDeep, get } from 'lodash'
-import TurndownService from 'turndown'
 import {
     AnalyticHandler,
+    convertChatHistoryToText,
+    generateFollowUpPrompts,
     ICommonObject,
     ICondition,
     IFileUpload,
     IHumanInput,
     IMessage,
-    IServerSideEventStreamer,
-    convertChatHistoryToText,
-    generateFollowUpPrompts
+    IServerSideEventStreamer
 } from 'flowise-components'
+import { cloneDeep, get } from 'lodash'
+import TurndownService from 'turndown'
+import { DataSource } from 'typeorm'
+import { pathToFileURL } from 'url'
+import { v4 as uuidv4 } from 'uuid'
 import {
-    IncomingAgentflowInput,
-    INodeData,
-    IReactFlowObject,
-    IExecuteFlowParams,
-    IFlowConfig,
-    IAgentflowExecutedData,
-    ExecutionState,
-    IExecution,
-    IChatMessage,
-    ChatType,
-    IReactFlowNode,
-    IReactFlowEdge,
-    IComponentNodes,
-    INodeOverrides,
-    IVariableOverride,
-    INodeDirectedGraph
-} from '../Interface'
-import {
-    RUNTIME_MESSAGES_LENGTH_VAR_PREFIX,
+    _removeCredentialId,
     CHAT_HISTORY_VAR_PREFIX,
+    CURRENT_DATE_TIME_VAR_PREFIX,
     databaseEntities,
     FILE_ATTACHMENT_PREFIX,
     getAppVersion,
     getGlobalVariable,
     getStartingNode,
     getTelemetryFlowObj,
+    LOOP_COUNT_VAR_PREFIX,
     QUESTION_VAR_PREFIX,
-    CURRENT_DATE_TIME_VAR_PREFIX,
-    _removeCredentialId,
-    validateHistorySchema,
-    LOOP_COUNT_VAR_PREFIX
+    RUNTIME_MESSAGES_LENGTH_VAR_PREFIX,
+    validateHistorySchema
 } from '.'
-import { ChatFlow } from '../database/entities/ChatFlow'
-import { Variable } from '../database/entities/Variable'
-import { replaceInputsWithConfig, constructGraphs, getAPIOverrideConfig } from '../utils'
-import logger from './logger'
-import { getErrorMessage } from '../errors/utils'
-import { Execution } from '../database/entities/Execution'
-import { utilAddChatMessage } from './addChatMesage'
 import { CachePool } from '../CachePool'
+import { ChatFlow } from '../database/entities/ChatFlow'
 import { ChatMessage } from '../database/entities/ChatMessage'
-import { Telemetry } from './telemetry'
+import { Execution } from '../database/entities/Execution'
+import { Variable } from '../database/entities/Variable'
 import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
+import { getErrorMessage } from '../errors/utils'
+import {
+    ChatType,
+    ExecutionState,
+    IAgentflowExecutedData,
+    IChatMessage,
+    IComponentNodes,
+    IExecuteFlowParams,
+    IExecution,
+    IFlowConfig,
+    IncomingAgentflowInput,
+    INodeData,
+    INodeDirectedGraph,
+    INodeOverrides,
+    IReactFlowEdge,
+    IReactFlowNode,
+    IReactFlowObject,
+    IVariableOverride
+} from '../Interface'
 import { UsageCacheManager } from '../UsageCacheManager'
+import { constructGraphs, getAPIOverrideConfig, replaceInputsWithConfig } from '../utils'
+import { utilAddChatMessage } from './addChatMesage'
 import { generateTTSForResponseStream, shouldAutoPlayTTS } from './buildChatflow'
+import logger from './logger'
+import { Telemetry } from './telemetry'
 
 interface IWaitingNode {
     nodeId: string
@@ -1060,7 +1061,7 @@ const executeNode = async ({
 
         // Get node implementation
         const nodeInstanceFilePath = componentNodes[reactFlowNode.data.name].filePath as string
-        const nodeModule = await import(nodeInstanceFilePath)
+        const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
         const newNodeInstance = new nodeModule.nodeClass()
 
         // Prepare node data

@@ -1,6 +1,15 @@
+import { BaseChatModel } from '@langchain/core/language_models/chat_models'
+import { AIMessageChunk, BaseMessageLike, MessageContentText } from '@langchain/core/messages'
+import { Tool } from '@langchain/core/tools'
+import { flatten } from 'lodash'
 // @ts-ignore - ESM module in CommonJS
 import fetch from 'node-fetch'
-import { BaseChatModel } from '@langchain/core/language_models/chat_models'
+import { DataSource } from 'typeorm'
+import { pathToFileURL } from 'url'
+import zodToJsonSchema from 'zod-to-json-schema'
+import { ARTIFACTS_PREFIX, SOURCE_DOCUMENTS_PREFIX, TOOL_ARGS_PREFIX } from '../../../src/agents'
+import { getErrorMessage } from '../../../src/error'
+import { AnalyticHandler } from '../../../src/handler'
 import {
     ICommonObject,
     IDatabaseEntity,
@@ -13,16 +22,10 @@ import {
     IServerSideEventStreamer,
     IUsedTool
 } from '../../../src/Interface'
-import { AIMessageChunk, BaseMessageLike, MessageContentText } from '@langchain/core/messages'
-import { AnalyticHandler } from '../../../src/handler'
-import { DEFAULT_SUMMARIZER_TEMPLATE } from '../prompt'
+import { addSingleFileToStorage } from '../../../src/storageUtils'
+import { convertMultiOptionsToStringArray, getCredentialData, getCredentialParam, processTemplateVariables } from '../../../src/utils'
 import { ILLMMessage } from '../Interface.Agentflow'
-import { Tool } from '@langchain/core/tools'
-import { ARTIFACTS_PREFIX, SOURCE_DOCUMENTS_PREFIX, TOOL_ARGS_PREFIX } from '../../../src/agents'
-import { flatten } from 'lodash'
-import zodToJsonSchema from 'zod-to-json-schema'
-import { getErrorMessage } from '../../../src/error'
-import { DataSource } from 'typeorm'
+import { DEFAULT_SUMMARIZER_TEMPLATE } from '../prompt'
 import {
     getPastChatHistoryImageMessages,
     getUniqueImageMessages,
@@ -30,8 +33,6 @@ import {
     replaceBase64ImagesWithFileReferences,
     updateFlowState
 } from '../utils'
-import { convertMultiOptionsToStringArray, getCredentialData, getCredentialParam, processTemplateVariables } from '../../../src/utils'
-import { addSingleFileToStorage } from '../../../src/storageUtils'
 interface ITool {
     agentSelectedTool: string
     agentSelectedToolConfig: ICommonObject
@@ -565,7 +566,7 @@ class Agent_Agentflow implements INode {
             for (const tool of tools) {
                 const toolConfig = tool.agentSelectedToolConfig
                 const nodeInstanceFilePath = options.componentNodes[tool.agentSelectedTool].filePath as string
-                const nodeModule = await import(nodeInstanceFilePath)
+                const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
                 const newToolNodeInstance = new nodeModule.nodeClass()
                 const newNodeData = {
                     ...nodeData,
@@ -624,12 +625,12 @@ class Agent_Agentflow implements INode {
             if (knowledgeBases && knowledgeBases.length > 0) {
                 for (const knowledgeBase of knowledgeBases) {
                     const nodeInstanceFilePath = options.componentNodes['retrieverTool'].filePath as string
-                    const nodeModule = await import(nodeInstanceFilePath)
+                    const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
                     const newRetrieverToolNodeInstance = new nodeModule.nodeClass()
                     const [storeId, storeName] = knowledgeBase.documentStore.split(':')
 
                     const docStoreVectorInstanceFilePath = options.componentNodes['documentStoreVS'].filePath as string
-                    const docStoreVectorModule = await import(docStoreVectorInstanceFilePath)
+                    const docStoreVectorModule = await import(pathToFileURL(docStoreVectorInstanceFilePath).href)
                     const newDocStoreVectorInstance = new docStoreVectorModule.nodeClass()
                     const docStoreVectorInstance = await newDocStoreVectorInstance.init(
                         {
@@ -688,13 +689,13 @@ class Agent_Agentflow implements INode {
             if (knowledgeBasesForVSEmbeddings && knowledgeBasesForVSEmbeddings.length > 0) {
                 for (const knowledgeBase of knowledgeBasesForVSEmbeddings) {
                     const nodeInstanceFilePath = options.componentNodes['retrieverTool'].filePath as string
-                    const nodeModule = await import(nodeInstanceFilePath)
+                    const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
                     const newRetrieverToolNodeInstance = new nodeModule.nodeClass()
 
                     const selectedEmbeddingModel = knowledgeBase.embeddingModel
                     const selectedEmbeddingModelConfig = knowledgeBase.embeddingModelConfig
                     const embeddingInstanceFilePath = options.componentNodes[selectedEmbeddingModel].filePath as string
-                    const embeddingModule = await import(embeddingInstanceFilePath)
+                    const embeddingModule = await import(pathToFileURL(embeddingInstanceFilePath).href)
                     const newEmbeddingInstance = new embeddingModule.nodeClass()
                     const newEmbeddingNodeData = {
                         ...nodeData,
@@ -709,7 +710,7 @@ class Agent_Agentflow implements INode {
                     const selectedVectorStore = knowledgeBase.vectorStore
                     const selectedVectorStoreConfig = knowledgeBase.vectorStoreConfig
                     const vectorStoreInstanceFilePath = options.componentNodes[selectedVectorStore].filePath as string
-                    const vectorStoreModule = await import(vectorStoreInstanceFilePath)
+                    const vectorStoreModule = await import(pathToFileURL(vectorStoreInstanceFilePath).href)
                     const newVectorStoreInstance = new vectorStoreModule.nodeClass()
                     const newVSNodeData = {
                         ...nodeData,
@@ -781,7 +782,7 @@ class Agent_Agentflow implements INode {
 
             // Initialize the LLM model instance
             const nodeInstanceFilePath = options.componentNodes[model].filePath as string
-            const nodeModule = await import(nodeInstanceFilePath)
+            const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
             const newLLMNodeInstance = new nodeModule.nodeClass()
             const newNodeData = {
                 ...nodeData,

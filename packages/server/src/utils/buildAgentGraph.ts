@@ -1,35 +1,36 @@
 // @ts-nocheck
-import {
-    ICommonObject,
-    IMultiAgentNode,
-    IAgentReasoning,
-    IAction,
-    ITeamState,
-    ConsoleCallbackHandler,
-    additionalCallbacks,
-    ISeqAgentsState,
-    ISeqAgentNode,
-    IUsedTool,
-    IDocument,
-    IServerSideEventStreamer
-} from 'flowise-components'
-import { omit, cloneDeep, flatten, uniq } from 'lodash'
-import { StateGraph, END, START } from '@langchain/langgraph'
 import { Document } from '@langchain/core/documents'
-import { StatusCodes } from 'http-status-codes'
-import { v4 as uuidv4 } from 'uuid'
+import { AIMessage, AIMessageChunk, BaseMessage, HumanMessage, ToolMessage } from '@langchain/core/messages'
 import { StructuredTool } from '@langchain/core/tools'
-import { BaseMessage, HumanMessage, AIMessage, AIMessageChunk, ToolMessage } from '@langchain/core/messages'
-import { IChatFlow, IComponentNodes, IDepthQueue, IReactFlowNode, IReactFlowEdge, IMessage, IncomingInput, IFlowConfig } from '../Interface'
-import { databaseEntities, clearSessionMemory, getAPIOverrideConfig } from '../utils'
+import { END, START, StateGraph } from '@langchain/langgraph'
+import {
+    additionalCallbacks,
+    ConsoleCallbackHandler,
+    IAction,
+    IAgentReasoning,
+    ICommonObject,
+    IDocument,
+    IMultiAgentNode,
+    ISeqAgentNode,
+    ISeqAgentsState,
+    IServerSideEventStreamer,
+    ITeamState,
+    IUsedTool
+} from 'flowise-components'
+import { StatusCodes } from 'http-status-codes'
+import { cloneDeep, flatten, omit, uniq } from 'lodash'
+import { DataSource } from 'typeorm'
+import { pathToFileURL } from 'url'
+import { v4 as uuidv4 } from 'uuid'
 import { replaceInputsWithConfig, resolveVariables } from '.'
-import { InternalFlowiseError } from '../errors/internalFlowiseError'
-import { getErrorMessage } from '../errors/utils'
-import logger from './logger'
+import { CachePool } from '../CachePool'
 import { Variable } from '../database/entities/Variable'
 import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
-import { DataSource } from 'typeorm'
-import { CachePool } from '../CachePool'
+import { InternalFlowiseError } from '../errors/internalFlowiseError'
+import { getErrorMessage } from '../errors/utils'
+import { IChatFlow, IComponentNodes, IDepthQueue, IFlowConfig, IMessage, IncomingInput, IReactFlowEdge, IReactFlowNode } from '../Interface'
+import { clearSessionMemory, databaseEntities, getAPIOverrideConfig } from '../utils'
+import logger from './logger'
 
 /**
  * Build Agent Graph
@@ -474,7 +475,7 @@ const compileMultiAgentsGraph = async (params: MultiAgentsGraphParams) => {
     // Init worker nodes
     for (const workerNode of workerNodes) {
         const nodeInstanceFilePath = componentNodes[workerNode.data.name].filePath as string
-        const nodeModule = await import(nodeInstanceFilePath)
+        const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
         const newNodeInstance = new nodeModule.nodeClass()
 
         let flowNodeData = cloneDeep(workerNode.data)
@@ -514,7 +515,7 @@ const compileMultiAgentsGraph = async (params: MultiAgentsGraphParams) => {
         if (!supervisorNode) continue
 
         const nodeInstanceFilePath = componentNodes[supervisorNode.data.name].filePath as string
-        const nodeModule = await import(nodeInstanceFilePath)
+        const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
         const newNodeInstance = new nodeModule.nodeClass()
 
         let flowNodeData = cloneDeep(supervisorNode.data)
@@ -700,7 +701,7 @@ const compileSeqAgentsGraph = async (params: SeqAgentsGraphParams) => {
 
     const initiateNode = async (node: IReactFlowNode) => {
         const nodeInstanceFilePath = componentNodes[node.data.name].filePath as string
-        const nodeModule = await import(nodeInstanceFilePath)
+        const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
         const newNodeInstance = new nodeModule.nodeClass()
 
         flowNodeData = cloneDeep(node.data)

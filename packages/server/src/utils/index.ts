@@ -2,10 +2,47 @@
  * Strictly no getRepository, appServer here, must be passed as parameter
  */
 
-import path from 'path'
+import {
+    CreateSecretCommand,
+    GetSecretValueCommand,
+    SecretsManagerClient,
+    SecretsManagerClientConfig
+} from '@aws-sdk/client-secrets-manager'
+import { randomBytes } from 'crypto'
+import { AES, enc } from 'crypto-js'
+import {
+    FlowiseMemory,
+    ICommonObject,
+    IDatabaseEntity,
+    IFileUpload,
+    IMessage,
+    convertChatHistoryToText,
+    getEncryptionKeyPath,
+    getInputVariables,
+    getS3Config,
+    handleEscapeCharacters
+} from 'flowise-components'
 import fs from 'fs'
-import logger from './logger'
+import { StatusCodes } from 'http-status-codes'
+import { cloneDeep, get, isEqual } from 'lodash'
+import multer from 'multer'
+import MulterGoogleCloudStorage from 'multer-cloud-storage'
+import multerS3 from 'multer-s3'
+import path from 'path'
+import { DataSource } from 'typeorm'
+import { pathToFileURL } from 'url'
 import { v4 as uuidv4 } from 'uuid'
+import { CachePool } from '../CachePool'
+import { Assistant } from '../database/entities/Assistant'
+import { ChatFlow } from '../database/entities/ChatFlow'
+import { ChatMessage } from '../database/entities/ChatMessage'
+import { Credential } from '../database/entities/Credential'
+import { DocumentStore } from '../database/entities/DocumentStore'
+import { DocumentStoreFileChunk } from '../database/entities/DocumentStoreFileChunk'
+import { Lead } from '../database/entities/Lead'
+import { Tool } from '../database/entities/Tool'
+import { Variable } from '../database/entities/Variable'
+import { InternalFlowiseError } from '../errors/internalFlowiseError'
 import {
     IChatFlow,
     IComponentCredentials,
@@ -27,43 +64,7 @@ import {
     IVariableOverride,
     IncomingInput
 } from '../Interface'
-import { cloneDeep, get, isEqual } from 'lodash'
-import {
-    convertChatHistoryToText,
-    getInputVariables,
-    handleEscapeCharacters,
-    getEncryptionKeyPath,
-    ICommonObject,
-    IDatabaseEntity,
-    IMessage,
-    FlowiseMemory,
-    IFileUpload,
-    getS3Config
-} from 'flowise-components'
-import { randomBytes } from 'crypto'
-import { AES, enc } from 'crypto-js'
-import multer from 'multer'
-import multerS3 from 'multer-s3'
-import MulterGoogleCloudStorage from 'multer-cloud-storage'
-import { ChatFlow } from '../database/entities/ChatFlow'
-import { ChatMessage } from '../database/entities/ChatMessage'
-import { Credential } from '../database/entities/Credential'
-import { Tool } from '../database/entities/Tool'
-import { Assistant } from '../database/entities/Assistant'
-import { Lead } from '../database/entities/Lead'
-import { DataSource } from 'typeorm'
-import { CachePool } from '../CachePool'
-import { Variable } from '../database/entities/Variable'
-import { DocumentStore } from '../database/entities/DocumentStore'
-import { DocumentStoreFileChunk } from '../database/entities/DocumentStoreFileChunk'
-import { InternalFlowiseError } from '../errors/internalFlowiseError'
-import { StatusCodes } from 'http-status-codes'
-import {
-    CreateSecretCommand,
-    GetSecretValueCommand,
-    SecretsManagerClient,
-    SecretsManagerClientConfig
-} from '@aws-sdk/client-secrets-manager'
+import logger from './logger'
 
 export const QUESTION_VAR_PREFIX = 'question'
 export const FILE_ATTACHMENT_PREFIX = 'file_attachment'
@@ -582,7 +583,7 @@ export const buildFlow = async ({
 
         try {
             const nodeInstanceFilePath = componentNodes[reactFlowNode.data.name].filePath as string
-            const nodeModule = await import(nodeInstanceFilePath)
+            const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
             const newNodeInstance = new nodeModule.nodeClass()
 
             let flowNodeData = cloneDeep(reactFlowNode.data)
@@ -781,7 +782,7 @@ export const clearSessionMemory = async (
         if (isClearFromViewMessageDialog && memoryType && node.data.label !== memoryType) continue
 
         const nodeInstanceFilePath = componentNodes[node.data.name].filePath as string
-        const nodeModule = await import(nodeInstanceFilePath)
+        const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
         const newNodeInstance = new nodeModule.nodeClass()
         const options: ICommonObject = { orgId, chatId, appDataSource, databaseEntities, logger }
 
@@ -1776,7 +1777,7 @@ export const getSessionChatHistory = async (
     prependMessages?: IMessage[]
 ): Promise<IMessage[]> => {
     const nodeInstanceFilePath = componentNodes[memoryNode.data.name].filePath as string
-    const nodeModule = await import(nodeInstanceFilePath)
+    const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
     const newNodeInstance = new nodeModule.nodeClass()
 
     // Replace memory's sessionId/chatId

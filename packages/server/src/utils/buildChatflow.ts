@@ -1,77 +1,78 @@
 // @ts-nocheck
 import { Request } from 'express'
-import * as path from 'path'
-import { DataSource } from 'typeorm'
-import { v4 as uuidv4 } from 'uuid'
-import { omit } from 'lodash'
 import {
-    IFileUpload,
+    addArrayFilesToStorage,
+    addSingleFileToStorage,
     convertSpeechToText,
     convertTextToSpeechStream,
-    ICommonObject,
-    addSingleFileToStorage,
-    generateFollowUpPrompts,
-    IAction,
-    addArrayFilesToStorage,
-    mapMimeTypeToInputField,
-    mapExtToInputField,
-    getFileFromUpload,
-    removeSpecificFileFromUpload,
     EvaluationRunner,
+    generateFollowUpPrompts,
+    getFileFromUpload,
     handleEscapeCharacters,
-    IServerSideEventStreamer
+    IAction,
+    ICommonObject,
+    IFileUpload,
+    IServerSideEventStreamer,
+    mapExtToInputField,
+    mapMimeTypeToInputField,
+    removeSpecificFileFromUpload
 } from 'flowise-components'
 import { StatusCodes } from 'http-status-codes'
+import { omit } from 'lodash'
+import * as path from 'path'
+import { DataSource } from 'typeorm'
+import { pathToFileURL } from 'url'
+import { v4 as uuidv4 } from 'uuid'
+import { databaseEntities } from '.'
 import {
-    IncomingInput,
-    IMessage,
-    INodeData,
-    IReactFlowNode,
-    IReactFlowObject,
-    IDepthQueue,
     ChatType,
     IChatMessage,
+    IComponentNodes,
+    IDepthQueue,
     IExecuteFlowParams,
     IFlowConfig,
-    IComponentNodes,
-    IVariable,
+    IMessage,
+    IncomingInput,
+    INodeData,
     INodeOverrides,
+    IReactFlowNode,
+    IReactFlowObject,
+    IVariable,
     IVariableOverride,
     MODE
 } from '../Interface'
-import { InternalFlowiseError } from '../errors/internalFlowiseError'
-import { databaseEntities } from '.'
+import { FLOWISE_COUNTER_STATUS, FLOWISE_METRIC_COUNTERS, IMetricsProvider } from '../Interface.Metrics'
 import { ChatFlow } from '../database/entities/ChatFlow'
 import { ChatMessage } from '../database/entities/ChatMessage'
 import { Variable } from '../database/entities/Variable'
-import { getRunningExpressApp } from '../utils/getRunningExpressApp'
-import {
-    isFlowValidForStream,
-    buildFlow,
-    getTelemetryFlowObj,
-    getAppVersion,
-    resolveVariables,
-    getSessionChatHistory,
-    findMemoryNode,
-    replaceInputsWithConfig,
-    getStartingNodes,
-    getMemorySessionId,
-    getEndingNodes,
-    constructGraphs,
-    getAPIOverrideConfig
-} from '../utils'
-import { validateFlowAPIKey } from './validateKey'
-import logger from './logger'
-import { utilAddChatMessage } from './addChatMesage'
-import { checkPredictions, checkStorage, updatePredictionsUsage, updateStorageUsage } from './quotaUsage'
-import { buildAgentGraph } from './buildAgentGraph'
-import { getErrorMessage } from '../errors/utils'
-import { FLOWISE_METRIC_COUNTERS, FLOWISE_COUNTER_STATUS, IMetricsProvider } from '../Interface.Metrics'
-import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
-import { OMIT_QUEUE_JOB_DATA } from './constants'
-import { executeAgentFlow } from './buildAgentflow'
-import { Workspace } from '../enterprise/database/entities/workspace.entity'
 import { Organization } from '../enterprise/database/entities/organization.entity'
+import { Workspace } from '../enterprise/database/entities/workspace.entity'
+import { getWorkspaceSearchOptions } from '../enterprise/utils/ControllerServiceUtils'
+import { InternalFlowiseError } from '../errors/internalFlowiseError'
+import { getErrorMessage } from '../errors/utils'
+import {
+    buildFlow,
+    constructGraphs,
+    findMemoryNode,
+    getAPIOverrideConfig,
+    getAppVersion,
+    getEndingNodes,
+    getMemorySessionId,
+    getSessionChatHistory,
+    getStartingNodes,
+    getTelemetryFlowObj,
+    isFlowValidForStream,
+    replaceInputsWithConfig,
+    resolveVariables
+} from '../utils'
+import { getRunningExpressApp } from '../utils/getRunningExpressApp'
+import { utilAddChatMessage } from './addChatMesage'
+import { buildAgentGraph } from './buildAgentGraph'
+import { executeAgentFlow } from './buildAgentflow'
+import { OMIT_QUEUE_JOB_DATA } from './constants'
+import logger from './logger'
+import { checkPredictions, checkStorage, updatePredictionsUsage, updateStorageUsage } from './quotaUsage'
+import { validateFlowAPIKey } from './validateKey'
 
 const shouldAutoPlayTTS = (textToSpeechConfig: string | undefined | null): boolean => {
     if (!textToSpeechConfig) return false
@@ -195,7 +196,7 @@ const initEndingNode = async ({
     logger.debug(`[server]: Running ${reactFlowNodeData.label} (${reactFlowNodeData.id})`)
 
     const nodeInstanceFilePath = componentNodes[reactFlowNodeData.name].filePath as string
-    const nodeModule = await import(nodeInstanceFilePath)
+    const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
     const nodeInstance = new nodeModule.nodeClass({ sessionId })
 
     return { endingNodeData: reactFlowNodeData, endingNodeInstance: nodeInstance }
@@ -807,7 +808,7 @@ export const executeFlow = async ({
                 try {
                     const postProcessingFunction = JSON.parse(chatflowConfig?.postProcessing?.customFunction)
                     const nodeInstanceFilePath = componentNodes['customFunction'].filePath as string
-                    const nodeModule = await import(nodeInstanceFilePath)
+                    const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
                     //set the outputs.output to EndingNode to prevent json escaping of content...
                     const nodeData = {
                         inputs: { javascriptFunction: postProcessingFunction },
@@ -1142,4 +1143,5 @@ const incrementFailedMetricCounter = (metricsProvider: IMetricsProvider, isInter
     }
 }
 
-export { shouldAutoPlayTTS, generateTTSForResponseStream }
+export { generateTTSForResponseStream, shouldAutoPlayTTS }
+

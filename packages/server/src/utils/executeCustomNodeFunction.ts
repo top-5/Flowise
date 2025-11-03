@@ -1,9 +1,10 @@
 import { handleEscapeCharacters, ICommonObject } from 'flowise-components'
+import { StatusCodes } from 'http-status-codes'
+import { DataSource } from 'typeorm'
+import { pathToFileURL } from 'url'
 import { databaseEntities } from '.'
 import { InternalFlowiseError } from '../errors/internalFlowiseError'
-import { StatusCodes } from 'http-status-codes'
 import { getErrorMessage } from '../errors/utils'
-import { DataSource } from 'typeorm'
 import { IComponentNodes } from '../Interface'
 
 export const executeCustomNodeFunction = async ({
@@ -36,7 +37,7 @@ export const executeCustomNodeFunction = async ({
         if (Object.prototype.hasOwnProperty.call(componentNodes, 'customFunction')) {
             try {
                 const nodeInstanceFilePath = componentNodes['customFunction'].filePath as string
-                const nodeModule = await import(nodeInstanceFilePath)
+                const nodeModule = await import(pathToFileURL(nodeInstanceFilePath).href)
                 const newNodeInstance = new nodeModule.nodeClass()
 
                 const options: ICommonObject = {
